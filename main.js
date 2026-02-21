@@ -9,6 +9,7 @@ class SensGame {
     this.hitsDisplay = document.getElementById('hits-count');
     this.missesDisplay = document.getElementById('misses-count');
     this.timerDisplay = document.getElementById('timer-display');
+    this.intervalText = document.getElementById('interval-text');
     this.startBtn = document.getElementById('start-btn');
     this.stopBtn = document.getElementById('stop-btn');
     this.overlay = document.getElementById('overlay-start');
@@ -16,14 +17,20 @@ class SensGame {
     // Monitor ratio 16:9, but cells are square
     this.cols = 16;
     this.rows = 9;
-    this.interval = 1000; // 1 second
+    
+    // Interval settings
+    this.initialInterval = 1000; // 1 second
+    this.minInterval = 300;     // 0.3 second
+    this.intervalDecrease = 15; // Decrease by 15ms each target
+    this.currentInterval = this.initialInterval;
+    
     this.cells = [];
     this.activeCellIndex = null;
     
     this.hits = 0;
     this.misses = 0;
     this.startTime = null;
-    this.gameInterval = null;
+    this.timeoutId = null; // Changed to setTimeout for dynamic interval
     this.timerInterval = null;
     this.isPlaying = false;
 
@@ -67,10 +74,11 @@ class SensGame {
     this.overlay.classList.add('hidden');
     this.stopBtn.classList.remove('hidden');
     this.startTime = Date.now();
+    this.currentInterval = this.initialInterval;
+    this.intervalText.textContent = `${(this.currentInterval / 1000).toFixed(2)}s`;
 
     // Start target cycle
     this.nextTarget();
-    this.gameInterval = setInterval(() => this.nextTarget(), this.interval);
     
     // Start timer display
     this.timerInterval = setInterval(() => this.updateTimer(), 100);
@@ -97,6 +105,8 @@ class SensGame {
   }
 
   nextTarget() {
+    if (!this.isPlaying) return;
+
     // If there was an active target that wasn't clicked, it's a miss
     if (this.activeCellIndex !== null) {
       const currentActive = this.cells[this.activeCellIndex];
@@ -115,6 +125,20 @@ class SensGame {
 
     this.activeCellIndex = newIndex;
     this.cells[this.activeCellIndex].classList.add('active');
+
+    // Progressive difficulty: Decrease interval
+    if (this.currentInterval > this.minInterval) {
+      this.currentInterval -= this.intervalDecrease;
+      if (this.currentInterval < this.minInterval) {
+        this.currentInterval = this.minInterval;
+      }
+    }
+    
+    // Update interval display
+    this.intervalText.textContent = `${(this.currentInterval / 1000).toFixed(2)}s`;
+
+    // Set next timeout with updated interval
+    this.timeoutId = setTimeout(() => this.nextTarget(), this.currentInterval);
   }
 
   handleCellClick(cell) {
@@ -143,7 +167,7 @@ class SensGame {
 
   stopGame() {
     this.isPlaying = false;
-    clearInterval(this.gameInterval);
+    clearTimeout(this.timeoutId);
     clearInterval(this.timerInterval);
     this.overlay.classList.remove('hidden');
     this.stopBtn.classList.add('hidden');

@@ -92,18 +92,43 @@ h1 .accent {
 }
 
 .grid-container {
-  width: 600px; /* 고정 크기 (중앙 부분 유지) */
-  height: 600px;
+  width: 800px; /* 16:9 비율 유지를 위해 너비 조정 (50px * 16) */
+  height: 450px; /* 16:9 비율 유지를 위해 높이 조정 (50px * 9) */
   background-color: var(--card-bg);
   border: 2px solid rgba(0, 242, 255, 0.2);
   display: grid;
-  grid-template-columns: repeat(10, 1fr);
-  grid-template-rows: repeat(10, 1fr);
+  grid-template-columns: repeat(16, 1fr); /* 16열 */
+  grid-template-rows: repeat(9, 1fr);   /* 9행 */
   gap: 2px;
   position: relative;
   box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
   border-radius: 4px;
   overflow: hidden;
+}
+
+.stop-btn {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  padding: 0.5rem 1rem;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: 1rem;
+  border-radius: 4px;
+  align-self: center;
+}
+
+.stop-btn:hover {
+  background: var(--danger);
+  color: white;
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+}
+
+.stop-btn.hidden {
+  display: none;
 }
 
 .grid-cell {

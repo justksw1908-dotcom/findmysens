@@ -10,9 +10,12 @@ class SensGame {
     this.missesDisplay = document.getElementById('misses-count');
     this.timerDisplay = document.getElementById('timer-display');
     this.startBtn = document.getElementById('start-btn');
+    this.stopBtn = document.getElementById('stop-btn');
     this.overlay = document.getElementById('overlay-start');
 
-    this.gridSize = 10;
+    // Monitor ratio 16:9, but cells are square
+    this.cols = 16;
+    this.rows = 9;
     this.interval = 1000; // 1 second
     this.cells = [];
     this.activeCellIndex = null;
@@ -30,6 +33,7 @@ class SensGame {
   init() {
     this.createGrid();
     this.startBtn.addEventListener('click', () => this.startGame());
+    this.stopBtn.addEventListener('click', () => this.stopGame());
     
     // Global click listener for the grid to track misses
     this.gridContainer.addEventListener('mousedown', (e) => {
@@ -46,8 +50,9 @@ class SensGame {
     // Clear existing cells (except overlay)
     const existingCells = this.gridContainer.querySelectorAll('.grid-cell');
     existingCells.forEach(cell => cell.remove());
+    this.cells = [];
 
-    for (let i = 0; i < this.gridSize * this.gridSize; i++) {
+    for (let i = 0; i < this.cols * this.rows; i++) {
       const cell = document.createElement('div');
       cell.classList.add('grid-cell');
       cell.dataset.index = i;
@@ -60,6 +65,7 @@ class SensGame {
     this.resetStats();
     this.isPlaying = true;
     this.overlay.classList.add('hidden');
+    this.stopBtn.classList.remove('hidden');
     this.startTime = Date.now();
 
     // Start target cycle
@@ -76,7 +82,11 @@ class SensGame {
     this.hitsDisplay.textContent = '0';
     this.missesDisplay.textContent = '0';
     this.timerDisplay.textContent = '00:00';
-    this.cells.forEach(cell => cell.classList.remove('active'));
+    this.cells.forEach(cell => {
+      cell.classList.remove('active');
+      cell.style.backgroundColor = '';
+    });
+    this.activeCellIndex = null;
   }
 
   updateTimer() {
@@ -88,7 +98,6 @@ class SensGame {
 
   nextTarget() {
     // If there was an active target that wasn't clicked, it's a miss
-    // But we only count it if it's not the first target
     if (this.activeCellIndex !== null) {
       const currentActive = this.cells[this.activeCellIndex];
       if (currentActive.classList.contains('active')) {
@@ -117,7 +126,7 @@ class SensGame {
       // Visual feedback for hit
       cell.style.backgroundColor = 'rgba(16, 185, 129, 0.5)';
       setTimeout(() => {
-        cell.style.backgroundColor = '';
+        if (cell) cell.style.backgroundColor = '';
       }, 100);
 
     } else {
@@ -127,7 +136,7 @@ class SensGame {
       // Visual feedback for miss
       cell.style.backgroundColor = 'rgba(239, 68, 68, 0.3)';
       setTimeout(() => {
-        cell.style.backgroundColor = '';
+        if (cell) cell.style.backgroundColor = '';
       }, 100);
     }
   }
@@ -137,7 +146,13 @@ class SensGame {
     clearInterval(this.gameInterval);
     clearInterval(this.timerInterval);
     this.overlay.classList.remove('hidden');
+    this.stopBtn.classList.add('hidden');
     this.startBtn.textContent = 'RESTART TEST';
+    
+    // Clear active target
+    if (this.activeCellIndex !== null) {
+      this.cells[this.activeCellIndex].classList.remove('active');
+    }
   }
 }
 

@@ -14,7 +14,7 @@ class SensGame {
     
     this.startBtn = document.getElementById('start-btn');
     this.stopBtn = document.getElementById('stop-btn');
-    this.keyHint = document.querySelector('.key-hint');
+    this.keyHint = document.querySelector('.key-hint-container');
     this.restartBtn = document.getElementById('restart-btn');
     this.startOverlay = document.getElementById('overlay-start');
     this.resultOverlay = document.getElementById('overlay-result');
@@ -25,10 +25,11 @@ class SensGame {
     this.recDisplay = document.getElementById('sens-recommendation');
     this.finalHits = document.getElementById('final-hits');
     this.finalTime = document.getElementById('final-time');
+    this.finalGrade = document.getElementById('final-grade');
 
     this.modes = {
-      standard: { cols: 16, rows: 9 },
-      small: { cols: 32, rows: 18 }
+      standard: { cols: 16, rows: 9, side: 70 }, // 1120 / 16
+      small: { cols: 32, rows: 18, side: 35 }    // 1120 / 32
     };
     this.currentMode = 'standard';
     
@@ -54,8 +55,8 @@ class SensGame {
     this.timerInterval = null;
     this.graphUpdateInterval = null;
 
-    this.offsets = []; // overshoot/undershoot ratios
-    this.pixelDistances = []; // raw distances in px from center
+    this.offsets = []; 
+    this.pixelDistances = []; 
     this.graphData = { labels: [], accuracy: [], avgDistance: [] };
     this.accuracyChart = null;
     this.distanceChart = null;
@@ -70,10 +71,8 @@ class SensGame {
     this.restartBtn.addEventListener('click', () => {
       this.resultOverlay.classList.add('hidden');
       this.startOverlay.classList.remove('hidden');
-      this.startBtn.textContent = 'START TEST';
     });
 
-    // Spacebar to Stop
     window.addEventListener('keydown', (e) => {
       if (e.code === 'Space' && this.isPlaying) {
         e.preventDefault();
@@ -244,7 +243,6 @@ class SensGame {
     const currRect = this.cells[this.activeCellIndex].getBoundingClientRect();
     const currCenter = { x: currRect.left + currRect.width / 2, y: currRect.top + currRect.height / 2 };
     
-    // Pixel Distance from exact center dot
     const distFromCenter = Math.sqrt(Math.pow(event.clientX - currCenter.x, 2) + Math.pow(event.clientY - currCenter.y, 2));
     this.pixelDistances.push(distFromCenter);
 
@@ -261,7 +259,6 @@ class SensGame {
     const vcx = event.clientX - prevCenter.x;
     const vcy = event.clientY - prevCenter.y;
 
-    // Dot product projection: how far along the path did the user click?
     const overshootRatio = (vcx * dx + vcy * dy) / (targetDist * targetDist);
     this.offsets.push(overshootRatio);
   }
@@ -284,33 +281,59 @@ class SensGame {
   }
 
   showAnalysis() {
+    const avgPxDist = this.pixelDistances.length === 0 ? 999 : this.pixelDistances.reduce((a, b) => a + b, 0) / this.pixelDistances.length;
+    const config = this.modes[this.currentMode];
+    
+    // Calculate grade based on pixel distance relative to side length
+    // Grade 1 (SSS): < 8% of side length
+    const errorRatio = (avgPxDist / config.side) * 100;
+    
+    let grade = "";
+    let gradeClass = "";
+    let isElite = false;
+
+    if (errorRatio < 8) { grade = "SSS"; gradeClass = "sss"; isElite = true; }
+    else if (errorRatio < 12) { grade = "SS"; gradeClass = "ss"; isElite = true; }
+    else if (errorRatio < 16) { grade = "S"; gradeClass = "s"; }
+    else if (errorRatio < 20) { grade = "A"; gradeClass = "a"; }
+    else if (errorRatio < 25) { grade = "B"; gradeClass = "b"; }
+    else if (errorRatio < 30) { grade = "C"; gradeClass = "c"; }
+    else { grade = "D"; gradeClass = "d"; }
+
+    this.finalGrade.textContent = grade;
+    this.finalGrade.className = `grade-value ${gradeClass}`;
+
     if (this.offsets.length < 5) {
-      this.analysisText.textContent = "More data needed for precision center analysis.";
+      this.analysisText.textContent = "More data needed for precision analysis.";
       this.recDisplay.textContent = "";
       return;
     }
 
     const avgOffset = this.offsets.reduce((a, b) => a + b, 0) / this.offsets.length;
-    const avgPxDist = this.pixelDistances.reduce((a, b) => a + b, 0) / this.pixelDistances.length;
-    
     let rec = "";
-    let percent = 0;
     
-    // avgOffset > 1 means consistently clicking past the center dot
-    if (avgOffset > 1.01) {
-      percent = Math.round((avgOffset - 1) * 100);
-      this.analysisText.textContent = `Trend: Consistent Overshooting (Avg Error: ${avgPxDist.toFixed(1)}px).`;
-      rec = `LOWER SENSITIVITY BY ~${percent}%`;
-      this.recDisplay.className = "recommendation adjust";
-    } else if (avgOffset < 0.99) {
-      percent = Math.round((1 - avgOffset) * 100);
-      this.analysisText.textContent = `Trend: Consistent Undershooting (Avg Error: ${avgPxDist.toFixed(1)}px).`;
-      rec = `HIGHER SENSITIVITY BY ~${percent}%`;
-      this.recDisplay.className = "recommendation adjust";
-    } else {
-      this.analysisText.textContent = `Precision: Excellent (Avg Error: ${avgPxDist.toFixed(1)}px).`;
+    // Sensitivity advice only if not Grade 1 or 2
+    if (isElite) {
+      this.analysisText.textContent = `Excellent precision (Avg Error: ${avgPxDist.toFixed(1)}px).`;
       rec = "SENSITIVITY IS OPTIMAL";
       this.recDisplay.className = "recommendation";
+    } else {
+      let percent = 0;
+      if (avgOffset > 1.01) {
+        percent = Math.round((avgOffset - 1) * 100);
+        this.analysisText.textContent = `Trend: Overshooting (Avg Error: ${avgPxDist.toFixed(1)}px).`;
+        rec = `LOWER SENSITIVITY BY ~${percent}%`;
+        this.recDisplay.className = "recommendation adjust";
+      } else if (avgOffset < 0.99) {
+        percent = Math.round((1 - avgOffset) * 100);
+        this.analysisText.textContent = `Trend: Undershooting (Avg Error: ${avgPxDist.toFixed(1)}px).`;
+        rec = `HIGHER SENSITIVITY BY ~${percent}%`;
+        this.recDisplay.className = "recommendation adjust";
+      } else {
+        this.analysisText.textContent = `Centered but imprecise (Avg Error: ${avgPxDist.toFixed(1)}px).`;
+        rec = "SENSITIVITY IS OPTIMAL";
+        this.recDisplay.className = "recommendation";
+      }
     }
     this.recDisplay.textContent = rec;
   }

@@ -29,7 +29,10 @@
                 </div>
                 <div class="stop-wrapper">
                     <button id="stop-btn" class="stop-btn hidden">STOP TEST</button>
-                    <span class="key-hint hidden">[SPACE]</span>
+                    <div class="key-hint-container hidden">
+                        <span class="key-cap">SPACE</span>
+                        <span class="key-text">TO STOP</span>
+                    </div>
                 </div>
             </div>
         </header>
@@ -50,7 +53,7 @@
                     </div>
 
                     <button id="start-btn" class="glow-btn">START TEST</button>
-                    <p class="hint">Precision analysis based on target center.</p>
+                    <p class="hint">Precision analysis based on target center dot.</p>
                 </div>
 
                 <div id="overlay-result" class="overlay hidden">
@@ -58,6 +61,10 @@
                     
                     <div class="result-layout">
                         <div class="result-sidebar">
+                            <div class="grade-container">
+                                <span class="grade-label">PRECISION GRADE</span>
+                                <span id="final-grade" class="grade-value">-</span>
+                            </div>
                             <div class="result-stats">
                                 <div class="res-item">HITS: <span id="final-hits">0</span></div>
                                 <div class="res-item">TIME: <span id="final-time">00:00</span></div>

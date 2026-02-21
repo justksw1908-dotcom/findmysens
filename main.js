@@ -23,6 +23,7 @@ class SensGame {
 
     this.analysisText = document.getElementById('analysis-text');
     this.recDisplay = document.getElementById('sens-recommendation');
+    this.deviationDisplay = document.getElementById('avg-deviation-value');
     this.finalHits = document.getElementById('final-hits');
     this.finalTime = document.getElementById('final-time');
     this.finalGrade = document.getElementById('final-grade');
@@ -55,8 +56,8 @@ class SensGame {
     this.timerInterval = null;
     this.graphUpdateInterval = null;
 
-    this.offsets = []; 
-    this.pixelDistances = []; 
+    this.offsets = []; // Ratio of (actual movement / target distance)
+    this.pixelDistances = []; // Raw px from center
     this.graphData = { labels: [], accuracy: [], avgDistance: [] };
     this.accuracyChart = null;
     this.distanceChart = null;
@@ -71,6 +72,7 @@ class SensGame {
     this.restartBtn.addEventListener('click', () => {
       this.resultOverlay.classList.add('hidden');
       this.startOverlay.classList.remove('hidden');
+      this.startBtn.textContent = 'START TEST';
     });
 
     window.addEventListener('keydown', (e) => {
@@ -260,6 +262,7 @@ class SensGame {
     const vcx = event.clientX - prevCenter.x;
     const vcy = event.clientY - prevCenter.y;
 
+    // overshootRatio: 1.0 means perfect distance, > 1.0 means too far
     const overshootRatio = (vcx * dx + vcy * dy) / (targetDist * targetDist);
     this.offsets.push(overshootRatio);
   }
@@ -303,32 +306,36 @@ class SensGame {
 
     if (this.offsets.length < 3) {
       this.analysisText.textContent = "More sessions required for precision feedback.";
-      this.recDisplay.textContent = "";
+      this.deviationDisplay.textContent = "0%";
       return;
     }
 
-    const avgOffset = this.offsets.reduce((a, b) => a + b, 0) / this.offsets.length;
+    const avgOffsetRatio = this.offsets.reduce((a, b) => a + b, 0) / this.offsets.length;
+    const deviationPercent = (avgOffsetRatio - 1) * 100;
+    
+    // Always show the deviation percentage
+    const sign = deviationPercent >= 0 ? "+" : "";
+    this.deviationDisplay.textContent = `${sign}${deviationPercent.toFixed(1)}%`;
+    this.deviationDisplay.className = "deviation-value " + (deviationPercent > 1 ? "plus" : (deviationPercent < -1 ? "minus" : "perfect"));
+
     let rec = "";
     
-    // Sensitivity advice: Forced for non-Elite, refined text for elite
     if (isElite) {
-      this.analysisText.textContent = `God-like precision (Avg Error: ${avgPxDist.toFixed(1)}px). No major adjustment needed.`;
+      this.analysisText.textContent = `Excellent precision. No adjustment required.`;
       rec = "SENSITIVITY IS OPTIMAL";
       this.recDisplay.className = "recommendation";
     } else {
-      let percent = 0;
-      if (avgOffset > 1.01) {
-        percent = Math.round((avgOffset - 1) * 100);
-        this.analysisText.textContent = `Aim Pattern: Consistent Overshooting (${percent}% past center dot).`;
-        rec = `REDUCE SENSITIVITY BY ~${percent}%`;
+      const absPercent = Math.abs(Math.round(deviationPercent));
+      if (deviationPercent > 1) {
+        this.analysisText.textContent = `Your aim consistently overshoots the center dot.`;
+        rec = `LOWER SENSITIVITY BY ~${absPercent}%`;
         this.recDisplay.className = "recommendation adjust";
-      } else if (avgOffset < 0.99) {
-        percent = Math.round((1 - avgOffset) * 100);
-        this.analysisText.textContent = `Aim Pattern: Consistent Undershooting (${percent}% before center dot).`;
-        rec = `INCREASE SENSITIVITY BY ~${percent}%`;
+      } else if (deviationPercent < -1) {
+        this.analysisText.textContent = `Your aim consistently stops before the center dot.`;
+        rec = `HIGHER SENSITIVITY BY ~${absPercent}%`;
         this.recDisplay.className = "recommendation adjust";
       } else {
-        this.analysisText.textContent = `Great centering, but loose group (Avg Error: ${avgPxDist.toFixed(1)}px).`;
+        this.analysisText.textContent = `Centered but loose (Avg Error: ${avgPxDist.toFixed(1)}px).`;
         rec = "FOCUS ON STEADINESS";
         this.recDisplay.className = "recommendation";
       }
@@ -340,12 +347,11 @@ class SensGame {
     const ctxAcc = document.getElementById('accuracy-chart').getContext('2d');
     const ctxDist = document.getElementById('distance-chart').getContext('2d');
     const config = this.modes[this.currentMode];
-    const targetBoundary = config.side / 2; // Radius from center to edge
+    const targetBoundary = config.side / 2;
 
     if (this.accuracyChart) this.accuracyChart.destroy();
     if (this.distanceChart) this.distanceChart.destroy();
 
-    // Dynamic Y-Axis for Accuracy
     const minAcc = Math.max(0, Math.min(...this.graphData.accuracy) - 10);
     const maxAcc = Math.min(100, Math.max(...this.graphData.accuracy) + 10);
 

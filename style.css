@@ -254,9 +254,39 @@ h1 .accent {
 .analysis-box {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
-  padding: 1.5rem;
+  padding: 1.2rem;
   border-left: 4px solid var(--accent-color);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
+
+.deviation-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 0.8rem 1rem;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+}
+
+.deviation-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-family: 'Orbitron', sans-serif;
+}
+
+.deviation-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+  color: var(--accent-color);
+}
+
+.deviation-value.plus { color: var(--danger); }
+.deviation-value.minus { color: #ff9d00; }
+.deviation-value.perfect { color: var(--success); }
 
 .analysis-title {
   color: var(--accent-color);

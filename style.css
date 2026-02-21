@@ -92,8 +92,8 @@ h1 .accent {
 }
 
 .grid-container {
-  width: 800px; /* 16:9 비율 유지를 위해 너비 조정 (50px * 16) */
-  height: 450px; /* 16:9 비율 유지를 위해 높이 조정 (50px * 9) */
+  width: 1120px; /* 기존 800px에서 확장 (70px * 16) */
+  height: 630px; /* 기존 450px에서 확장 (70px * 9) */
   background-color: var(--card-bg);
   border: 2px solid rgba(0, 242, 255, 0.2);
   display: grid;

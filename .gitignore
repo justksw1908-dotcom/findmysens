@@ -1,0 +1,14 @@
+# Node modules
+node_modules/
+
+# IDE files
+.vscode/
+.idx/
+
+# Logs
+*.log
+firebase-debug.log
+
+# Build outputs
+dist/
+build/

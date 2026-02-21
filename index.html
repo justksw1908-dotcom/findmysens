@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="app-container">
@@ -32,27 +33,35 @@
 
         <main class="game-view">
             <div id="grid-container" class="grid-container">
-                <!-- JavaScript will populate the grid here -->
                 <div id="overlay-start" class="overlay">
                     <div class="mode-selection">
                         <button class="mode-btn active" data-mode="standard">STANDARD (16x9)</button>
                         <button class="mode-btn" data-mode="small">SMALL (32x18)</button>
                     </div>
                     <button id="start-btn" class="glow-btn">START TEST</button>
-                    <p class="hint">5 Misses = Game Over. Precision is key.</p>
+                    <p class="hint">5 Misses = Game Over. Penalties make it slower.</p>
                 </div>
 
                 <div id="overlay-result" class="overlay hidden">
-                    <h2 class="result-title">TEST COMPLETE</h2>
-                    <div class="result-stats">
-                        <div class="res-item">HITS: <span id="final-hits">0</span></div>
-                        <div class="res-item">TIME: <span id="final-time">00:00</span></div>
+                    <h2 class="result-title">TEST SUMMARY</h2>
+                    
+                    <div class="result-layout">
+                        <div class="result-sidebar">
+                            <div class="result-stats">
+                                <div class="res-item">HITS: <span id="final-hits">0</span></div>
+                                <div class="res-item">TIME: <span id="final-time">00:00</span></div>
+                            </div>
+                            <div id="analysis-box" class="analysis-box">
+                                <h3 class="analysis-title">SENSITIVITY ANALYSIS</h3>
+                                <p id="analysis-text">Analyzing...</p>
+                                <div id="sens-recommendation" class="recommendation"></div>
+                            </div>
+                        </div>
+                        <div class="result-graph-container">
+                            <canvas id="accuracy-chart"></canvas>
+                        </div>
                     </div>
-                    <div id="analysis-box" class="analysis-box">
-                        <h3 class="analysis-title">SENSITIVITY ANALYSIS</h3>
-                        <p id="analysis-text">Analyzing your aim pattern...</p>
-                        <div id="sens-recommendation" class="recommendation"></div>
-                    </div>
+
                     <button id="restart-btn" class="glow-btn">RETRY TEST</button>
                 </div>
             </div>

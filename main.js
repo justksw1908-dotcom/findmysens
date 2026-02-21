@@ -1,11 +1,9 @@
 /**
  * FindMySens - FPS Mouse Sensitivity Checker
- * Logic for dynamic grids, click vector analysis, and sensitivity recommendations.
  */
 
 class SensGame {
   constructor() {
-    // UI Elements
     this.gridContainer = document.getElementById('grid-container');
     this.hitsDisplay = document.getElementById('hits-count');
     this.missesDisplay = document.getElementById('misses-count');
@@ -21,13 +19,11 @@ class SensGame {
     this.resultOverlay = document.getElementById('overlay-result');
     this.modeBtns = document.querySelectorAll('.mode-btn');
 
-    // Analysis UI
     this.analysisText = document.getElementById('analysis-text');
     this.recDisplay = document.getElementById('sens-recommendation');
     this.finalHits = document.getElementById('final-hits');
     this.finalTime = document.getElementById('final-time');
 
-    // Game Config
     this.modes = {
       standard: { cols: 16, rows: 9 },
       small: { cols: 32, rows: 18 }
@@ -37,32 +33,33 @@ class SensGame {
     this.maxMisses = 5;
     this.initialInterval = 1000;
     this.minInterval = 300;
-    this.intervalDecrease = 15;
+    this.intervalDecrease = 10; // Reduced acceleration
+    this.intervalPenalty = 50;  // Miss penalty (slower)
 
-    // State
     this.isPlaying = false;
     this.cells = [];
     this.activeCellIndex = null;
     this.prevCellIndex = null;
+    this.targetProcessed = false; // Flag to prevent multiple life deductions
     
     this.hits = 0;
     this.misses = 0;
     this.startTime = null;
     this.currentInterval = 1000;
     
-    // Timer Handles
     this.timeoutId = null;
     this.timerInterval = null;
+    this.graphUpdateInterval = null;
 
-    // Analysis Data
-    this.offsets = []; // Array of { overshoot: float } where > 1 is overshoot, < 1 is undershoot
+    this.offsets = [];
+    this.graphData = { labels: [], hits: [], accuracy: [] };
+    this.chart = null;
 
     this.init();
   }
 
   init() {
     this.createGrid();
-    
     this.startBtn.addEventListener('click', () => this.startGame());
     this.stopBtn.addEventListener('click', () => this.stopGame());
     this.restartBtn.addEventListener('click', () => {
@@ -91,8 +88,7 @@ class SensGame {
     const config = this.modes[this.currentMode];
     this.gridContainer.style.gridTemplateColumns = `repeat(${config.cols}, 1fr)`;
     this.gridContainer.style.gridTemplateRows = `repeat(${config.rows}, 1fr)`;
-    
-    this.gridContainer.innerHTML = ''; // Clear but keep overlays? No, overlays are separate
+    this.gridContainer.innerHTML = '';
     this.gridContainer.appendChild(this.startOverlay);
     this.gridContainer.appendChild(this.resultOverlay);
 
@@ -119,12 +115,14 @@ class SensGame {
 
     this.nextTarget();
     this.timerInterval = setInterval(() => this.updateTimer(), 100);
+    this.graphUpdateInterval = setInterval(() => this.recordGraphSnapshot(), 2000);
   }
 
   resetStats() {
     this.hits = 0;
     this.misses = 0;
     this.offsets = [];
+    this.graphData = { labels: [], hits: [], accuracy: [] };
     this.hitsDisplay.textContent = '0';
     this.missesDisplay.textContent = '0';
     this.lifeDisplay.textContent = this.maxMisses;
@@ -135,6 +133,7 @@ class SensGame {
     });
     this.activeCellIndex = null;
     this.prevCellIndex = null;
+    this.targetProcessed = false;
   }
 
   updateTimer() {
@@ -144,18 +143,30 @@ class SensGame {
     this.timerDisplay.textContent = `${minutes}:${seconds}`;
   }
 
+  recordGraphSnapshot() {
+    const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
+    const totalAttempts = this.hits + this.misses;
+    const currentAccuracy = totalAttempts === 0 ? 0 : (this.hits / totalAttempts) * 100;
+    
+    this.graphData.labels.push(`${elapsed}s`);
+    this.graphData.hits.push(this.hits);
+    this.graphData.accuracy.push(currentAccuracy.toFixed(1));
+  }
+
   nextTarget() {
     if (!this.isPlaying) return;
 
-    if (this.activeCellIndex !== null) {
-      const currentActive = this.cells[this.activeCellIndex];
-      if (currentActive.classList.contains('active')) {
-        this.handleMiss();
-        currentActive.classList.remove('active');
+    // Timeout miss
+    if (this.activeCellIndex !== null && !this.targetProcessed) {
+      if (this.cells[this.activeCellIndex].classList.contains('active')) {
+        this.applyMissPenalty();
       }
     }
 
+    this.cells.forEach(c => c.classList.remove('active'));
+    this.targetProcessed = false;
     this.prevCellIndex = this.activeCellIndex;
+    
     let newIndex;
     do {
       newIndex = Math.floor(Math.random() * this.cells.length);
@@ -164,66 +175,63 @@ class SensGame {
     this.activeCellIndex = newIndex;
     this.cells[this.activeCellIndex].classList.add('active');
 
-    if (this.currentInterval > this.minInterval) {
-      this.currentInterval -= this.intervalDecrease;
-    }
-    this.intervalText.textContent = `${(this.currentInterval / 1000).toFixed(2)}s`;
-
     this.timeoutId = setTimeout(() => this.nextTarget(), this.currentInterval);
-  }
-
-  handleMiss() {
-    this.misses++;
-    this.missesDisplay.textContent = this.misses;
-    this.lifeDisplay.textContent = Math.max(0, this.maxMisses - this.misses);
-    
-    if (this.misses >= this.maxMisses) {
-      this.endGame();
-    }
   }
 
   handleCellClick(cell, event) {
     if (cell.classList.contains('active')) {
-      this.analyzeClick(event);
-      this.hits++;
-      this.hitsDisplay.textContent = this.hits;
+      if (!this.targetProcessed) {
+        this.analyzeClick(event);
+        this.hits++;
+        this.hitsDisplay.textContent = this.hits;
+        this.targetProcessed = true;
+        
+        // Progressive difficulty
+        if (this.currentInterval > this.minInterval) {
+          this.currentInterval -= this.intervalDecrease;
+        }
+        this.intervalText.textContent = `${(this.currentInterval / 1000).toFixed(2)}s`;
+      }
       cell.classList.remove('active');
       cell.style.backgroundColor = 'rgba(16, 185, 129, 0.4)';
       setTimeout(() => cell.style.backgroundColor = '', 100);
     } else {
-      this.handleMiss();
+      if (!this.targetProcessed) {
+        this.applyMissPenalty();
+        this.targetProcessed = true;
+      }
       cell.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
       setTimeout(() => cell.style.backgroundColor = '', 100);
     }
   }
 
+  applyMissPenalty() {
+    this.misses++;
+    this.missesDisplay.textContent = this.misses;
+    this.lifeDisplay.textContent = Math.max(0, this.maxMisses - this.misses);
+    
+    // Penalty: Slower interval
+    this.currentInterval = Math.min(this.initialInterval, this.currentInterval + this.intervalPenalty);
+    this.intervalText.textContent = `${(this.currentInterval / 1000).toFixed(2)}s`;
+
+    if (this.misses >= this.maxMisses) {
+      this.endGame();
+    }
+  }
+
   analyzeClick(event) {
     if (this.prevCellIndex === null) return;
-
     const prevRect = this.cells[this.prevCellIndex].getBoundingClientRect();
     const currRect = this.cells[this.activeCellIndex].getBoundingClientRect();
-    
     const prevCenter = { x: prevRect.left + prevRect.width / 2, y: prevRect.top + prevRect.height / 2 };
     const currCenter = { x: currRect.left + currRect.width / 2, y: currRect.top + currRect.height / 2 };
-    
-    const clickX = event.clientX;
-    const clickY = event.clientY;
-
-    // Vector from Prev to Curr
     const dx = currCenter.x - prevCenter.x;
     const dy = currCenter.y - prevCenter.y;
     const targetDist = Math.sqrt(dx * dx + dy * dy);
-    
-    if (targetDist < 10) return; // Ignore very small movements
-
-    // Vector from Prev to Click
-    const vcx = clickX - prevCenter.x;
-    const vcy = clickY - prevCenter.y;
-
-    // Dot product to find projection of Click onto Path
-    const dot = (vcx * dx + vcy * dy) / targetDist;
-    const overshootRatio = dot / targetDist;
-
+    if (targetDist < 20) return;
+    const vcx = event.clientX - prevCenter.x;
+    const vcy = event.clientY - prevCenter.y;
+    const overshootRatio = (vcx * dx + vcy * dy) / (targetDist * targetDist);
     this.offsets.push(overshootRatio);
   }
 
@@ -231,46 +239,75 @@ class SensGame {
     this.isPlaying = false;
     clearTimeout(this.timeoutId);
     clearInterval(this.timerInterval);
+    clearInterval(this.graphUpdateInterval);
     
     this.stopBtn.classList.add('hidden');
     this.resultOverlay.classList.remove('hidden');
-    
     this.finalHits.textContent = this.hits;
     this.finalTime.textContent = this.timerDisplay.textContent;
 
     this.showAnalysis();
+    this.renderGraph();
   }
 
   showAnalysis() {
     if (this.offsets.length < 3) {
-      this.analysisText.textContent = "Not enough data collected. Try to hit more targets!";
+      this.analysisText.textContent = "Not enough data for a precise recommendation.";
       this.recDisplay.textContent = "";
       return;
     }
 
     const avgOffset = this.offsets.reduce((a, b) => a + b, 0) / this.offsets.length;
-    let feedback = "";
     let rec = "";
+    let percent = 0;
     
-    // avgOffset > 1 means consistently clicking past the center (Overshoot)
-    // avgOffset < 1 means consistently clicking before the center (Undershoot)
-    
-    if (avgOffset > 1.05) {
-      feedback = `You are consistently OVERSHOOTING targets (Average: ${((avgOffset - 1) * 100).toFixed(1)}% past center).`;
-      rec = "REDUCE YOUR SENSITIVITY";
+    if (avgOffset > 1.02) {
+      percent = Math.round((avgOffset - 1) * 100);
+      this.analysisText.textContent = `Pattern: Consistent Overshooting (Avg: ${percent}% past center).`;
+      rec = `REDUCE SENSITIVITY BY ~${percent}%`;
       this.recDisplay.className = "recommendation adjust";
-    } else if (avgOffset < 0.95) {
-      feedback = `You are consistently UNDERSHOOTING targets (Average: ${((1 - avgOffset) * 100).toFixed(1)}% before center).`;
-      rec = "INCREASE YOUR SENSITIVITY";
+    } else if (avgOffset < 0.98) {
+      percent = Math.round((1 - avgOffset) * 100);
+      this.analysisText.textContent = `Pattern: Consistent Undershooting (Avg: ${percent}% before center).`;
+      rec = `INCREASE SENSITIVITY BY ~${percent}%`;
       this.recDisplay.className = "recommendation adjust";
     } else {
-      feedback = "Your aim is very well centered relative to your movement vector.";
-      rec = "YOUR SENSITIVITY IS OPTIMAL";
+      this.analysisText.textContent = "Pattern: Highly accurate centering.";
+      rec = "SENSITIVITY IS OPTIMAL";
       this.recDisplay.className = "recommendation";
     }
-
-    this.analysisText.textContent = feedback;
     this.recDisplay.textContent = rec;
+  }
+
+  renderGraph() {
+    const ctx = document.getElementById('accuracy-chart').getContext('2d');
+    if (this.chart) this.chart.destroy();
+
+    this.chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: this.graphData.labels,
+        datasets: [{
+          label: 'Accuracy (%)',
+          data: this.graphData.accuracy,
+          borderColor: '#00f2ff',
+          backgroundColor: 'rgba(0, 242, 255, 0.1)',
+          fill: true,
+          tension: 0.4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#94a3b8' } },
+          x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+        },
+        plugins: {
+          legend: { labels: { color: '#ffffff', font: { family: 'Orbitron' } } }
+        }
+      }
+    });
   }
 
   stopGame() {
@@ -281,6 +318,4 @@ class SensGame {
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  new SensGame();
-});
+document.addEventListener('DOMContentLoaded', () => new SensGame());

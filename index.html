@@ -18,8 +18,8 @@
                     <span class="label">HITS</span>
                     <span id="hits-count" class="value">0</span>
                 </div>
-                <div class="stat-item">
-                    <span class="label">MISSES</span>
+                <div class="stat-item danger">
+                    <span class="label">MISSES (LIFE: <span id="life-left">5</span>)</span>
                     <span id="misses-count" class="value">0</span>
                 </div>
                 <div class="stat-item">
@@ -34,16 +34,34 @@
             <div id="grid-container" class="grid-container">
                 <!-- JavaScript will populate the grid here -->
                 <div id="overlay-start" class="overlay">
+                    <div class="mode-selection">
+                        <button class="mode-btn active" data-mode="standard">STANDARD (16x9)</button>
+                        <button class="mode-btn" data-mode="small">SMALL (32x18)</button>
+                    </div>
                     <button id="start-btn" class="glow-btn">START TEST</button>
-                    <p class="hint">Click the glowing squares. Test your reaction and aim.</p>
+                    <p class="hint">5 Misses = Game Over. Precision is key.</p>
+                </div>
+
+                <div id="overlay-result" class="overlay hidden">
+                    <h2 class="result-title">TEST COMPLETE</h2>
+                    <div class="result-stats">
+                        <div class="res-item">HITS: <span id="final-hits">0</span></div>
+                        <div class="res-item">TIME: <span id="final-time">00:00</span></div>
+                    </div>
+                    <div id="analysis-box" class="analysis-box">
+                        <h3 class="analysis-title">SENSITIVITY ANALYSIS</h3>
+                        <p id="analysis-text">Analyzing your aim pattern...</p>
+                        <div id="sens-recommendation" class="recommendation"></div>
+                    </div>
+                    <button id="restart-btn" class="glow-btn">RETRY TEST</button>
                 </div>
             </div>
         </main>
 
         <footer>
             <div class="controls">
-                <p>Grid Size: <span id="grid-size-text">16x9</span></p>
-                <p>Interval: <span id="interval-text">1.0s</span></p>
+                <p>Mode: <span id="grid-size-text">Standard</span></p>
+                <p>Speed: <span id="interval-text">1.0s</span></p>
             </div>
         </footer>
     </div>

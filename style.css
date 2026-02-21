@@ -13,7 +13,7 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  cursor: crosshair; /* FPS 게임 감성을 위해 십자 커서 사용 */
+  cursor: crosshair;
 }
 
 body {
@@ -32,10 +32,10 @@ body {
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 1200px;
+  max-width: 1400px;
   height: 95vh;
   padding: 2rem;
-  gap: 2rem;
+  gap: 1.5rem;
 }
 
 header {
@@ -50,7 +50,6 @@ h1 {
   font-family: 'Orbitron', sans-serif;
   font-size: 2.5rem;
   letter-spacing: 2px;
-  margin: 0;
 }
 
 h1 .accent {
@@ -60,13 +59,17 @@ h1 .accent {
 
 .stats-panel {
   display: flex;
-  gap: 2rem;
+  gap: 2.5rem;
 }
 
 .stat-item {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+}
+
+.stat-item.danger .value {
+  color: var(--danger);
 }
 
 .stat-item .label {
@@ -92,59 +95,27 @@ h1 .accent {
 }
 
 .grid-container {
-  width: 1120px; /* 기존 800px에서 확장 (70px * 16) */
-  height: 630px; /* 기존 450px에서 확장 (70px * 9) */
+  width: 1120px;
+  height: 630px;
   background-color: var(--card-bg);
   border: 2px solid rgba(0, 242, 255, 0.2);
   display: grid;
-  grid-template-columns: repeat(16, 1fr); /* 16열 */
-  grid-template-rows: repeat(9, 1fr);   /* 9행 */
-  gap: 2px;
+  /* Columns and rows will be set via JS inline styles */
+  gap: 1px;
   position: relative;
   box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
   border-radius: 4px;
   overflow: hidden;
 }
 
-.stop-btn {
-  background: transparent;
-  color: var(--danger);
-  border: 1px solid var(--danger);
-  padding: 0.5rem 1rem;
-  font-family: 'Orbitron', sans-serif;
-  font-size: 0.9rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  margin-left: 1rem;
-  border-radius: 4px;
-  align-self: center;
-}
-
-.stop-btn:hover {
-  background: var(--danger);
-  color: white;
-  box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
-}
-
-.stop-btn.hidden {
-  display: none;
-}
-
 .grid-cell {
   background-color: rgba(255, 255, 255, 0.03);
   transition: all 0.1s ease;
-  width: 100%;
-  height: 100%;
-}
-
-.grid-cell:hover {
-  background-color: rgba(255, 255, 255, 0.08);
 }
 
 .grid-cell.active {
   background-color: var(--accent-color);
-  box-shadow: inset 0 0 20px rgba(0, 242, 255, 0.8), 0 0 15px var(--accent-color);
+  box-shadow: inset 0 0 15px rgba(0, 242, 255, 0.8), 0 0 15px var(--accent-color);
   z-index: 10;
 }
 
@@ -154,18 +125,41 @@ h1 .accent {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(11, 15, 25, 0.9);
+  background-color: rgba(11, 15, 25, 0.95);
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   z-index: 100;
-  transition: opacity 0.3s ease;
+  padding: 2rem;
+  text-align: center;
 }
 
 .overlay.hidden {
-  opacity: 0;
-  pointer-events: none;
+  display: none;
+}
+
+.mode-selection {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.mode-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+  padding: 0.8rem 1.5rem;
+  font-family: 'Orbitron', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 4px;
+}
+
+.mode-btn.active {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+  background: rgba(0, 242, 255, 0.1);
 }
 
 .glow-btn {
@@ -179,7 +173,7 @@ h1 .accent {
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: var(--glow-shadow);
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .glow-btn:hover {
@@ -188,9 +182,31 @@ h1 .accent {
   box-shadow: 0 0 30px var(--accent-color);
 }
 
-.hint {
-  color: var(--text-secondary);
-  font-size: 1rem;
+.analysis-box {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 600px;
+  margin-bottom: 2rem;
+  border-left: 4px solid var(--accent-color);
+}
+
+.analysis-title {
+  color: var(--accent-color);
+  font-family: 'Orbitron', sans-serif;
+  margin-bottom: 1rem;
+}
+
+.recommendation {
+  margin-top: 1rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--success);
+}
+
+.recommendation.adjust {
+  color: var(--danger);
 }
 
 footer {
@@ -201,16 +217,28 @@ footer {
 .controls {
   display: flex;
   justify-content: center;
-  gap: 2rem;
+  gap: 3rem;
   color: var(--text-secondary);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.9rem;
 }
 
-@keyframes target-pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(0.95); }
-  100% { transform: scale(1); }
+.stop-btn {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+  padding: 0.5rem 1rem;
+  font-family: 'Orbitron', sans-serif;
+  cursor: pointer;
+  border-radius: 4px;
+  margin-left: 1rem;
 }
 
-.grid-cell.active {
-  animation: target-pulse 0.2s ease;
+.stop-btn:hover {
+  background: var(--danger);
+  color: white;
+}
+
+.hidden {
+  display: none !important;
 }

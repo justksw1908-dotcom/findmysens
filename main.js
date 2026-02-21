@@ -28,8 +28,8 @@ class SensGame {
     this.finalGrade = document.getElementById('final-grade');
 
     this.modes = {
-      standard: { cols: 16, rows: 9, side: 70 }, // 1120 / 16
-      small: { cols: 32, rows: 18, side: 35 }    // 1120 / 32
+      standard: { cols: 16, rows: 9, side: 70 }, 
+      small: { cols: 32, rows: 18, side: 35 }    
     };
     this.currentMode = 'standard';
     
@@ -160,6 +160,7 @@ class SensGame {
   }
 
   recordGraphSnapshot() {
+    if (!this.isPlaying) return;
     const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
     const totalAttempts = this.hits + this.misses;
     const currentAccuracy = totalAttempts === 0 ? 0 : (this.hits / totalAttempts) * 100;
@@ -168,8 +169,8 @@ class SensGame {
     const avgDist = recentDistances.length === 0 ? 0 : recentDistances.reduce((a, b) => a + b, 0) / recentDistances.length;
 
     this.graphData.labels.push(`${elapsed}s`);
-    this.graphData.accuracy.push(currentAccuracy.toFixed(1));
-    this.graphData.avgDistance.push(avgDist.toFixed(1));
+    this.graphData.accuracy.push(parseFloat(currentAccuracy.toFixed(1)));
+    this.graphData.avgDistance.push(parseFloat(avgDist.toFixed(1)));
   }
 
   nextTarget() {
@@ -283,9 +284,6 @@ class SensGame {
   showAnalysis() {
     const avgPxDist = this.pixelDistances.length === 0 ? 999 : this.pixelDistances.reduce((a, b) => a + b, 0) / this.pixelDistances.length;
     const config = this.modes[this.currentMode];
-    
-    // Calculate grade based on pixel distance relative to side length
-    // Grade 1 (SSS): < 8% of side length
     const errorRatio = (avgPxDist / config.side) * 100;
     
     let grade = "";
@@ -303,8 +301,8 @@ class SensGame {
     this.finalGrade.textContent = grade;
     this.finalGrade.className = `grade-value ${gradeClass}`;
 
-    if (this.offsets.length < 5) {
-      this.analysisText.textContent = "More data needed for precision analysis.";
+    if (this.offsets.length < 3) {
+      this.analysisText.textContent = "More sessions required for precision feedback.";
       this.recDisplay.textContent = "";
       return;
     }
@@ -312,26 +310,26 @@ class SensGame {
     const avgOffset = this.offsets.reduce((a, b) => a + b, 0) / this.offsets.length;
     let rec = "";
     
-    // Sensitivity advice only if not Grade 1 or 2
+    // Sensitivity advice: Forced for non-Elite, refined text for elite
     if (isElite) {
-      this.analysisText.textContent = `Excellent precision (Avg Error: ${avgPxDist.toFixed(1)}px).`;
+      this.analysisText.textContent = `God-like precision (Avg Error: ${avgPxDist.toFixed(1)}px). No major adjustment needed.`;
       rec = "SENSITIVITY IS OPTIMAL";
       this.recDisplay.className = "recommendation";
     } else {
       let percent = 0;
       if (avgOffset > 1.01) {
         percent = Math.round((avgOffset - 1) * 100);
-        this.analysisText.textContent = `Trend: Overshooting (Avg Error: ${avgPxDist.toFixed(1)}px).`;
-        rec = `LOWER SENSITIVITY BY ~${percent}%`;
+        this.analysisText.textContent = `Aim Pattern: Consistent Overshooting (${percent}% past center dot).`;
+        rec = `REDUCE SENSITIVITY BY ~${percent}%`;
         this.recDisplay.className = "recommendation adjust";
       } else if (avgOffset < 0.99) {
         percent = Math.round((1 - avgOffset) * 100);
-        this.analysisText.textContent = `Trend: Undershooting (Avg Error: ${avgPxDist.toFixed(1)}px).`;
-        rec = `HIGHER SENSITIVITY BY ~${percent}%`;
+        this.analysisText.textContent = `Aim Pattern: Consistent Undershooting (${percent}% before center dot).`;
+        rec = `INCREASE SENSITIVITY BY ~${percent}%`;
         this.recDisplay.className = "recommendation adjust";
       } else {
-        this.analysisText.textContent = `Centered but imprecise (Avg Error: ${avgPxDist.toFixed(1)}px).`;
-        rec = "SENSITIVITY IS OPTIMAL";
+        this.analysisText.textContent = `Great centering, but loose group (Avg Error: ${avgPxDist.toFixed(1)}px).`;
+        rec = "FOCUS ON STEADINESS";
         this.recDisplay.className = "recommendation";
       }
     }
@@ -341,9 +339,15 @@ class SensGame {
   renderGraphs() {
     const ctxAcc = document.getElementById('accuracy-chart').getContext('2d');
     const ctxDist = document.getElementById('distance-chart').getContext('2d');
-    
+    const config = this.modes[this.currentMode];
+    const targetBoundary = config.side / 2; // Radius from center to edge
+
     if (this.accuracyChart) this.accuracyChart.destroy();
     if (this.distanceChart) this.distanceChart.destroy();
+
+    // Dynamic Y-Axis for Accuracy
+    const minAcc = Math.max(0, Math.min(...this.graphData.accuracy) - 10);
+    const maxAcc = Math.min(100, Math.max(...this.graphData.accuracy) + 10);
 
     const chartOptions = {
       responsive: true,
@@ -370,21 +374,35 @@ class SensGame {
           tension: 0.4
         }]
       },
-      options: { ...chartOptions, scales: { ...chartOptions.scales, y: { ...chartOptions.scales.y, min: 0, max: 100 } } }
+      options: { ...chartOptions, scales: { ...chartOptions.scales, y: { ...chartOptions.scales.y, min: minAcc, max: maxAcc } } }
     });
 
     this.distanceChart = new Chart(ctxDist, {
       type: 'line',
       data: {
         labels: this.graphData.labels,
-        datasets: [{
-          label: 'Avg Center Offset (px)',
-          data: this.graphData.avgDistance,
-          borderColor: '#ff4d00',
-          backgroundColor: 'rgba(255, 77, 0, 0.1)',
-          fill: true,
-          tension: 0.4
-        }]
+        datasets: [
+          {
+            label: 'Avg Center Offset (px)',
+            data: this.graphData.avgDistance,
+            borderColor: '#ff4d00',
+            backgroundColor: 'rgba(255, 77, 0, 0.1)',
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: (context) => {
+              const value = context.dataset.data[context.dataIndex];
+              return value > targetBoundary ? '#ff0000' : '#ff4d00';
+            }
+          },
+          {
+            label: 'Target Boundary Edge',
+            data: Array(this.graphData.labels.length).fill(targetBoundary),
+            borderColor: 'rgba(239, 68, 68, 0.5)',
+            borderDash: [5, 5],
+            fill: false,
+            pointRadius: 0
+          }
+        ]
       },
       options: chartOptions
     });

@@ -63,6 +63,7 @@ class SensGame {
     this.distanceChart = null;
 
     this.init();
+    this.initConverter();
   }
 
   init() {
@@ -97,6 +98,64 @@ class SensGame {
       const cell = e.target.closest('.grid-cell');
       if (cell) this.handleCellClick(cell, e);
     });
+  }
+
+  initConverter() {
+    this.gameSelect = document.getElementById('game-select');
+    this.sensInput = document.getElementById('current-sens');
+    this.resultsDiv = document.getElementById('converted-results');
+
+    if (!this.gameSelect || !this.sensInput || !this.resultsDiv) return;
+
+    const updateConversion = () => {
+      if (!this.sensInput.value) {
+        this.resultsDiv.innerHTML = '';
+        return;
+      }
+
+      const currentSens = parseFloat(this.sensInput.value);
+      const game = this.gameSelect.value;
+      
+      // showAnalysis()에서 화면에 출력된 오차 퍼센트를 가져와 숫자로 변환
+      const deviationText = this.deviationDisplay.textContent.replace('%', '').replace('+', '');
+      const deviationPercent = parseFloat(deviationText) || 0;
+      
+      // 측정된 오차에 따라 '완벽한 감도' 자동 보정 (오버플릭은 감도를 낮추고, 언더플릭은 높임)
+      const adjustmentFactor = 1 - (deviationPercent / 100); 
+      const perfectSens = currentSens * adjustmentFactor;
+
+      // 선택한 게임의 엔진 기준값을 CS2(Source Engine) 기준으로 통일
+      let baseSens = perfectSens;
+      if (game === 'valorant') baseSens = perfectSens * 3.181818;
+      else if (game === 'ow2') baseSens = perfectSens / 3.333333;
+
+      // 타 게임용 감도로 변환 계산
+      const valoSens = baseSens / 3.181818;
+      const csgoSens = baseSens;
+      const ow2Sens = baseSens * 3.333333;
+
+      // 결과 렌더링
+      this.resultsDiv.innerHTML = `
+        <div style="color: #00f2ff; margin-bottom: 12px; font-weight: bold;">
+          💡 테스트 결과가 반영된 추천 감도: <span style="font-size: 18px;">${perfectSens.toFixed(3)}</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; text-align: center; font-size: 12px;">
+          <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);">
+            발로란트<br><strong style="font-size: 15px; color: #fff;">${valoSens.toFixed(3)}</strong>
+          </div>
+          <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);">
+            CS2 / 에이펙스<br><strong style="font-size: 15px; color: #fff;">${csgoSens.toFixed(3)}</strong>
+          </div>
+          <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);">
+            오버워치 2<br><strong style="font-size: 15px; color: #fff;">${ow2Sens.toFixed(3)}</strong>
+          </div>
+        </div>
+      `;
+    };
+
+    // 이벤트 리스너 등록 (입력하거나 게임을 바꿀 때마다 실시간 계산)
+    this.gameSelect.addEventListener('change', updateConversion);
+    this.sensInput.addEventListener('input', updateConversion);
   }
 
   createGrid() {
@@ -152,6 +211,8 @@ class SensGame {
     this.activeCellIndex = null;
     this.prevCellIndex = null;
     this.targetProcessed = false;
+    if (this.resultsDiv) this.resultsDiv.innerHTML = '';
+    if (this.sensInput) this.sensInput.value = '';
   }
 
   updateTimer() {

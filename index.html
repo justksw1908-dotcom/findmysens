@@ -105,6 +105,19 @@
                         </div>
                     </div>
 
+                    <div id="converter-section" style="margin-top: 25px; padding: 20px; background: rgba(0, 0, 0, 0.4); border-radius: 8px; text-align: left; width: 100%; box-sizing: border-box;">
+                      <h3 style="color: #fff; margin-top: 0; margin-bottom: 12px; font-size: 16px; font-family: 'Orbitron', sans-serif;">🎮 내 감도 다른 게임으로 변환하기</h3>
+                      <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <select id="game-select" style="padding: 10px; background: #2a2a35; color: #fff; border: 1px solid #444; border-radius: 4px; outline: none; flex: 1; font-size: 14px;">
+                          <option value="valorant">발로란트 (Valorant)</option>
+                          <option value="csgo">CS2 / 에이펙스 레전드</option>
+                          <option value="ow2">오버워치 2</option>
+                        </select>
+                        <input type="number" id="current-sens" placeholder="현재 사용중인 인게임 감도" step="0.01" style="padding: 10px; background: #2a2a35; color: #fff; border: 1px solid #444; border-radius: 4px; outline: none; flex: 1.5; font-size: 14px;">
+                      </div>
+                      <div id="converted-results" style="font-size: 14px; color: #ccc;">
+                        </div>
+                    </div>
                     <button id="restart-btn" class="glow-btn">RETRY TEST</button>
                 </div>
             </div>

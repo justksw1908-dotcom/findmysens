@@ -2,7 +2,7 @@
   --bg-color: #0b0f19;
   --card-bg: #161d2f;
   --accent-color: #00f2ff;
-  --complementary: #ff4d00; /* Neon Orange for the center dot */
+  --complementary: #ff4d00;
   --text-primary: #ffffff;
   --text-secondary: #94a3b8;
   --danger: #ef4444;
@@ -61,6 +61,21 @@ h1 .accent {
 .stats-panel {
   display: flex;
   gap: 2.5rem;
+  align-items: center;
+}
+
+.stop-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.key-hint {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  opacity: 0.6;
+  font-family: 'Orbitron', sans-serif;
 }
 
 .stat-item {
@@ -110,7 +125,6 @@ h1 .accent {
 
 .grid-cell {
   background-color: rgba(255, 255, 255, 0.03);
-  /* Remove any global transition for instant off */
   transition: background-color 0.1s ease-in; 
   position: relative;
   display: flex;
@@ -118,7 +132,6 @@ h1 .accent {
   align-items: center;
 }
 
-/* Explicitly override transition to ensure instant disappearance */
 .grid-cell:not(.active) {
   transition: none !important;
 }
@@ -129,7 +142,6 @@ h1 .accent {
   z-index: 10;
 }
 
-/* Center dot with complementary color */
 .grid-cell.active::after {
   content: '';
   width: 4px;
@@ -154,37 +166,12 @@ h1 .accent {
   padding: 1rem;
 }
 
-.overlay.hidden {
-  display: none;
-}
-
-.toggle-container {
-  margin-bottom: 2rem;
-}
-
-.toggle-label {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  cursor: pointer;
-  color: var(--text-secondary);
-  font-family: 'Orbitron', sans-serif;
-  font-size: 0.9rem;
-}
-
-.toggle-label input {
-  width: 1.5rem;
-  height: 1.5rem;
-  accent-color: var(--accent-color);
-}
-
 .result-layout {
   display: flex;
   width: 100%;
-  max-width: 1000px;
-  gap: 2rem;
-  margin-bottom: 2rem;
-  align-items: stretch;
+  max-width: 1100px;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
 }
 
 .result-sidebar {
@@ -195,23 +182,31 @@ h1 .accent {
 }
 
 .result-graph-container {
-  flex: 1.5;
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
   background: rgba(0, 0, 0, 0.2);
   border-radius: 8px;
-  padding: 1.5rem;
-  height: 400px;
+  padding: 1rem;
+}
+
+.chart-wrapper {
+  flex: 1;
+  min-height: 200px;
+  position: relative;
 }
 
 .analysis-box {
   background: rgba(0, 0, 0, 0.3);
   border-radius: 8px;
-  padding: 1.5rem;
+  padding: 1.2rem;
   border-left: 4px solid var(--accent-color);
 }
 
 .recommendation {
   margin-top: 1rem;
-  font-size: 1.4rem;
+  font-size: 1.3rem;
   font-weight: 700;
   color: var(--success);
 }
@@ -223,23 +218,21 @@ h1 .accent {
 .mode-selection {
   display: flex;
   gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.toggle-container {
   margin-bottom: 1.5rem;
 }
 
-.mode-btn {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--text-secondary);
-  padding: 0.8rem 1.5rem;
-  font-family: 'Orbitron', sans-serif;
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
   cursor: pointer;
-  border-radius: 4px;
-}
-
-.mode-btn.active {
-  border-color: var(--accent-color);
-  color: var(--accent-color);
-  background: rgba(0, 242, 255, 0.1);
+  color: var(--text-secondary);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.85rem;
 }
 
 .glow-btn {
@@ -247,29 +240,15 @@ h1 .accent {
   color: var(--accent-color);
   border: 2px solid var(--accent-color);
   padding: 1rem 3rem;
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   font-family: 'Orbitron', sans-serif;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: var(--glow-shadow);
 }
 
 .glow-btn:hover {
   background: var(--accent-color);
   color: var(--bg-color);
-}
-
-footer {
-  padding-top: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.controls {
-  display: flex;
-  justify-content: center;
-  gap: 3rem;
-  color: var(--text-secondary);
-  font-family: 'Orbitron', sans-serif;
 }
 
 .stop-btn {
@@ -280,7 +259,6 @@ footer {
   font-family: 'Orbitron', sans-serif;
   cursor: pointer;
   border-radius: 4px;
-  margin-left: 1rem;
 }
 
 .hidden {

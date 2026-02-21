@@ -14,6 +14,7 @@ class SensGame {
     
     this.startBtn = document.getElementById('start-btn');
     this.stopBtn = document.getElementById('stop-btn');
+    this.keyHint = document.querySelector('.key-hint');
     this.restartBtn = document.getElementById('restart-btn');
     this.startOverlay = document.getElementById('overlay-start');
     this.resultOverlay = document.getElementById('overlay-result');
@@ -53,9 +54,11 @@ class SensGame {
     this.timerInterval = null;
     this.graphUpdateInterval = null;
 
-    this.offsets = [];
-    this.graphData = { labels: [], accuracy: [] };
-    this.chart = null;
+    this.offsets = []; // overshoot/undershoot ratios
+    this.pixelDistances = []; // raw distances in px from center
+    this.graphData = { labels: [], accuracy: [], avgDistance: [] };
+    this.accuracyChart = null;
+    this.distanceChart = null;
 
     this.init();
   }
@@ -68,6 +71,14 @@ class SensGame {
       this.resultOverlay.classList.add('hidden');
       this.startOverlay.classList.remove('hidden');
       this.startBtn.textContent = 'START TEST';
+    });
+
+    // Spacebar to Stop
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && this.isPlaying) {
+        e.preventDefault();
+        this.stopGame();
+      }
     });
 
     this.modeBtns.forEach(btn => {
@@ -112,6 +123,7 @@ class SensGame {
     this.startOverlay.classList.add('hidden');
     this.resultOverlay.classList.add('hidden');
     this.stopBtn.classList.remove('hidden');
+    this.keyHint.classList.remove('hidden');
     
     this.startTime = Date.now();
     this.currentInterval = this.initialInterval;
@@ -126,7 +138,8 @@ class SensGame {
     this.hits = 0;
     this.misses = 0;
     this.offsets = [];
-    this.graphData = { labels: [], accuracy: [] };
+    this.pixelDistances = [];
+    this.graphData = { labels: [], accuracy: [], avgDistance: [] };
     this.hitsDisplay.textContent = '0';
     this.missesDisplay.textContent = '0';
     this.lifeDisplay.textContent = this.isLifeMode ? this.maxMisses : '∞';
@@ -152,8 +165,12 @@ class SensGame {
     const totalAttempts = this.hits + this.misses;
     const currentAccuracy = totalAttempts === 0 ? 0 : (this.hits / totalAttempts) * 100;
     
+    const recentDistances = this.pixelDistances.slice(-5);
+    const avgDist = recentDistances.length === 0 ? 0 : recentDistances.reduce((a, b) => a + b, 0) / recentDistances.length;
+
     this.graphData.labels.push(`${elapsed}s`);
     this.graphData.accuracy.push(currentAccuracy.toFixed(1));
+    this.graphData.avgDistance.push(avgDist.toFixed(1));
   }
 
   nextTarget() {
@@ -222,13 +239,18 @@ class SensGame {
   }
 
   analyzeClick(event) {
+    if (this.activeCellIndex === null) return;
+    
+    const currRect = this.cells[this.activeCellIndex].getBoundingClientRect();
+    const currCenter = { x: currRect.left + currRect.width / 2, y: currRect.top + currRect.height / 2 };
+    
+    // Pixel Distance from exact center dot
+    const distFromCenter = Math.sqrt(Math.pow(event.clientX - currCenter.x, 2) + Math.pow(event.clientY - currCenter.y, 2));
+    this.pixelDistances.push(distFromCenter);
+
     if (this.prevCellIndex === null) return;
     const prevRect = this.cells[this.prevCellIndex].getBoundingClientRect();
-    const currRect = this.cells[this.activeCellIndex].getBoundingClientRect();
-    
-    // Exact center coordinates where the complementary dot is located
     const prevCenter = { x: prevRect.left + prevRect.width / 2, y: prevRect.top + prevRect.height / 2 };
-    const currCenter = { x: currRect.left + currRect.width / 2, y: currRect.top + currRect.height / 2 };
     
     const dx = currCenter.x - prevCenter.x;
     const dy = currCenter.y - prevCenter.y;
@@ -239,93 +261,114 @@ class SensGame {
     const vcx = event.clientX - prevCenter.x;
     const vcy = event.clientY - prevCenter.y;
 
-    // Dot product analysis to determine overshoot/undershoot relative to the central point
+    // Dot product projection: how far along the path did the user click?
     const overshootRatio = (vcx * dx + vcy * dy) / (targetDist * targetDist);
     this.offsets.push(overshootRatio);
   }
 
   endGame() {
+    if (!this.isPlaying) return;
     this.isPlaying = false;
     clearTimeout(this.timeoutId);
     clearInterval(this.timerInterval);
     clearInterval(this.graphUpdateInterval);
     
     this.stopBtn.classList.add('hidden');
+    this.keyHint.classList.add('hidden');
     this.resultOverlay.classList.remove('hidden');
     this.finalHits.textContent = this.hits;
     this.finalTime.textContent = this.timerDisplay.textContent;
 
     this.showAnalysis();
-    this.renderGraph();
+    this.renderGraphs();
   }
 
   showAnalysis() {
     if (this.offsets.length < 5) {
-      this.analysisText.textContent = "More data needed for precision center analysis. Try longer sessions!";
+      this.analysisText.textContent = "More data needed for precision center analysis.";
       this.recDisplay.textContent = "";
       return;
     }
 
     const avgOffset = this.offsets.reduce((a, b) => a + b, 0) / this.offsets.length;
+    const avgPxDist = this.pixelDistances.reduce((a, b) => a + b, 0) / this.pixelDistances.length;
+    
     let rec = "";
     let percent = 0;
     
+    // avgOffset > 1 means consistently clicking past the center dot
     if (avgOffset > 1.01) {
       percent = Math.round((avgOffset - 1) * 100);
-      this.analysisText.textContent = `Trend: Consistently clicking past the center dot.`;
+      this.analysisText.textContent = `Trend: Consistent Overshooting (Avg Error: ${avgPxDist.toFixed(1)}px).`;
       rec = `LOWER SENSITIVITY BY ~${percent}%`;
       this.recDisplay.className = "recommendation adjust";
     } else if (avgOffset < 0.99) {
       percent = Math.round((1 - avgOffset) * 100);
-      this.analysisText.textContent = `Trend: Consistently clicking before the center dot.`;
+      this.analysisText.textContent = `Trend: Consistent Undershooting (Avg Error: ${avgPxDist.toFixed(1)}px).`;
       rec = `HIGHER SENSITIVITY BY ~${percent}%`;
       this.recDisplay.className = "recommendation adjust";
     } else {
-      this.analysisText.textContent = "Precision: Excellent centering on the neon dot.";
+      this.analysisText.textContent = `Precision: Excellent (Avg Error: ${avgPxDist.toFixed(1)}px).`;
       rec = "SENSITIVITY IS OPTIMAL";
       this.recDisplay.className = "recommendation";
     }
     this.recDisplay.textContent = rec;
   }
 
-  renderGraph() {
-    const ctx = document.getElementById('accuracy-chart').getContext('2d');
-    if (this.chart) this.chart.destroy();
+  renderGraphs() {
+    const ctxAcc = document.getElementById('accuracy-chart').getContext('2d');
+    const ctxDist = document.getElementById('distance-chart').getContext('2d');
+    
+    if (this.accuracyChart) this.accuracyChart.destroy();
+    if (this.distanceChart) this.distanceChart.destroy();
 
-    this.chart = new Chart(ctx, {
+    const chartOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8', font: { size: 10 } } },
+        x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 10 } } }
+      },
+      plugins: {
+        legend: { labels: { color: '#ffffff', font: { family: 'Orbitron', size: 10 } } }
+      }
+    };
+
+    this.accuracyChart = new Chart(ctxAcc, {
       type: 'line',
       data: {
         labels: this.graphData.labels,
         datasets: [{
-          label: 'Precision Accuracy (%)',
+          label: 'Accuracy (%)',
           data: this.graphData.accuracy,
           borderColor: '#00f2ff',
           backgroundColor: 'rgba(0, 242, 255, 0.1)',
           fill: true,
-          tension: 0.4,
-          pointRadius: 4,
-          pointBackgroundColor: '#ff4d00'
+          tension: 0.4
         }]
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
-          x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
-        },
-        plugins: {
-          legend: { labels: { color: '#ffffff', font: { family: 'Orbitron' } } }
-        }
-      }
+      options: { ...chartOptions, scales: { ...chartOptions.scales, y: { ...chartOptions.scales.y, min: 0, max: 100 } } }
+    });
+
+    this.distanceChart = new Chart(ctxDist, {
+      type: 'line',
+      data: {
+        labels: this.graphData.labels,
+        datasets: [{
+          label: 'Avg Center Offset (px)',
+          data: this.graphData.avgDistance,
+          borderColor: '#ff4d00',
+          backgroundColor: 'rgba(255, 77, 0, 0.1)',
+          fill: true,
+          tension: 0.4
+        }]
+      },
+      options: chartOptions
     });
   }
 
   stopGame() {
-    // If we stop manually, show the results of the current progress
-    if (this.isPlaying) {
-      this.endGame();
-    }
+    this.endGame();
   }
 }
 

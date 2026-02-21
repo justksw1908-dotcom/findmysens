@@ -27,7 +27,10 @@
                     <span class="label">TIME</span>
                     <span id="timer-display" class="value">00:00</span>
                 </div>
-                <button id="stop-btn" class="stop-btn hidden">STOP TEST</button>
+                <div class="stop-wrapper">
+                    <button id="stop-btn" class="stop-btn hidden">STOP TEST</button>
+                    <span class="key-hint hidden">[SPACE]</span>
+                </div>
             </div>
         </header>
 
@@ -60,13 +63,18 @@
                                 <div class="res-item">TIME: <span id="final-time">00:00</span></div>
                             </div>
                             <div id="analysis-box" class="analysis-box">
-                                <h3 class="analysis-title">PRECISION ANALYSIS</h3>
+                                <h3 class="analysis-title">SENSITIVITY ANALYSIS</h3>
                                 <p id="analysis-text">Analyzing...</p>
                                 <div id="sens-recommendation" class="recommendation"></div>
                             </div>
                         </div>
                         <div class="result-graph-container">
-                            <canvas id="accuracy-chart"></canvas>
+                            <div class="chart-wrapper">
+                                <canvas id="accuracy-chart"></canvas>
+                            </div>
+                            <div class="chart-wrapper">
+                                <canvas id="distance-chart"></canvas>
+                            </div>
                         </div>
                     </div>
 

@@ -38,8 +38,16 @@
                         <button class="mode-btn active" data-mode="standard">STANDARD (16x9)</button>
                         <button class="mode-btn" data-mode="small">SMALL (32x18)</button>
                     </div>
+                    
+                    <div class="toggle-container">
+                        <label class="toggle-label">
+                            <input type="checkbox" id="life-mode-toggle" checked>
+                            <span class="toggle-text">LIFE MODE (5 MISSES LIMIT)</span>
+                        </label>
+                    </div>
+
                     <button id="start-btn" class="glow-btn">START TEST</button>
-                    <p class="hint">5 Misses = Game Over. Penalties make it slower.</p>
+                    <p class="hint">Precision analysis based on target center.</p>
                 </div>
 
                 <div id="overlay-result" class="overlay hidden">
@@ -52,7 +60,7 @@
                                 <div class="res-item">TIME: <span id="final-time">00:00</span></div>
                             </div>
                             <div id="analysis-box" class="analysis-box">
-                                <h3 class="analysis-title">SENSITIVITY ANALYSIS</h3>
+                                <h3 class="analysis-title">PRECISION ANALYSIS</h3>
                                 <p id="analysis-text">Analyzing...</p>
                                 <div id="sens-recommendation" class="recommendation"></div>
                             </div>

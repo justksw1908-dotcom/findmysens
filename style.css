@@ -2,6 +2,7 @@
   --bg-color: #0b0f19;
   --card-bg: #161d2f;
   --accent-color: #00f2ff;
+  --complementary: #ff4d00; /* Neon Orange for the center dot */
   --text-primary: #ffffff;
   --text-secondary: #94a3b8;
   --danger: #ef4444;
@@ -109,13 +110,33 @@ h1 .accent {
 
 .grid-cell {
   background-color: rgba(255, 255, 255, 0.03);
-  transition: all 0.1s ease;
+  /* Remove any global transition for instant off */
+  transition: background-color 0.1s ease-in; 
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Explicitly override transition to ensure instant disappearance */
+.grid-cell:not(.active) {
+  transition: none !important;
 }
 
 .grid-cell.active {
   background-color: var(--accent-color);
   box-shadow: inset 0 0 15px rgba(0, 242, 255, 0.8), 0 0 15px var(--accent-color);
   z-index: 10;
+}
+
+/* Center dot with complementary color */
+.grid-cell.active::after {
+  content: '';
+  width: 4px;
+  height: 4px;
+  background-color: var(--complementary);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--complementary);
 }
 
 .overlay {
@@ -131,6 +152,30 @@ h1 .accent {
   align-items: center;
   z-index: 100;
   padding: 1rem;
+}
+
+.overlay.hidden {
+  display: none;
+}
+
+.toggle-container {
+  margin-bottom: 2rem;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.9rem;
+}
+
+.toggle-label input {
+  width: 1.5rem;
+  height: 1.5rem;
+  accent-color: var(--accent-color);
 }
 
 .result-layout {
@@ -178,7 +223,7 @@ h1 .accent {
 .mode-selection {
   display: flex;
   gap: 1rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .mode-btn {

@@ -18,6 +18,7 @@ class SensGame {
     this.startOverlay = document.getElementById('overlay-start');
     this.resultOverlay = document.getElementById('overlay-result');
     this.modeBtns = document.querySelectorAll('.mode-btn');
+    this.lifeToggle = document.getElementById('life-mode-toggle');
 
     this.analysisText = document.getElementById('analysis-text');
     this.recDisplay = document.getElementById('sens-recommendation');
@@ -33,14 +34,15 @@ class SensGame {
     this.maxMisses = 5;
     this.initialInterval = 1000;
     this.minInterval = 300;
-    this.intervalDecrease = 10; // Reduced acceleration
-    this.intervalPenalty = 50;  // Miss penalty (slower)
+    this.intervalDecrease = 10;
+    this.intervalPenalty = 50;
 
     this.isPlaying = false;
+    this.isLifeMode = true;
     this.cells = [];
     this.activeCellIndex = null;
     this.prevCellIndex = null;
-    this.targetProcessed = false; // Flag to prevent multiple life deductions
+    this.targetProcessed = false;
     
     this.hits = 0;
     this.misses = 0;
@@ -52,7 +54,7 @@ class SensGame {
     this.graphUpdateInterval = null;
 
     this.offsets = [];
-    this.graphData = { labels: [], hits: [], accuracy: [] };
+    this.graphData = { labels: [], accuracy: [] };
     this.chart = null;
 
     this.init();
@@ -103,6 +105,7 @@ class SensGame {
   }
 
   startGame() {
+    this.isLifeMode = this.lifeToggle.checked;
     this.resetStats();
     this.isPlaying = true;
     this.startOverlay.classList.add('hidden');
@@ -122,10 +125,10 @@ class SensGame {
     this.hits = 0;
     this.misses = 0;
     this.offsets = [];
-    this.graphData = { labels: [], hits: [], accuracy: [] };
+    this.graphData = { labels: [], accuracy: [] };
     this.hitsDisplay.textContent = '0';
     this.missesDisplay.textContent = '0';
-    this.lifeDisplay.textContent = this.maxMisses;
+    this.lifeDisplay.textContent = this.isLifeMode ? this.maxMisses : '∞';
     this.timerDisplay.textContent = '00:00';
     this.cells.forEach(cell => {
       cell.classList.remove('active');
@@ -149,20 +152,20 @@ class SensGame {
     const currentAccuracy = totalAttempts === 0 ? 0 : (this.hits / totalAttempts) * 100;
     
     this.graphData.labels.push(`${elapsed}s`);
-    this.graphData.hits.push(this.hits);
     this.graphData.accuracy.push(currentAccuracy.toFixed(1));
   }
 
   nextTarget() {
     if (!this.isPlaying) return;
 
-    // Timeout miss
+    // Target timed out
     if (this.activeCellIndex !== null && !this.targetProcessed) {
       if (this.cells[this.activeCellIndex].classList.contains('active')) {
         this.applyMissPenalty();
       }
     }
 
+    // Clean up active class instantly (CSS handles the removal transition)
     this.cells.forEach(c => c.classList.remove('active'));
     this.targetProcessed = false;
     this.prevCellIndex = this.activeCellIndex;
@@ -186,15 +189,12 @@ class SensGame {
         this.hitsDisplay.textContent = this.hits;
         this.targetProcessed = true;
         
-        // Progressive difficulty
         if (this.currentInterval > this.minInterval) {
           this.currentInterval -= this.intervalDecrease;
         }
         this.intervalText.textContent = `${(this.currentInterval / 1000).toFixed(2)}s`;
       }
       cell.classList.remove('active');
-      cell.style.backgroundColor = 'rgba(16, 185, 129, 0.4)';
-      setTimeout(() => cell.style.backgroundColor = '', 100);
     } else {
       if (!this.targetProcessed) {
         this.applyMissPenalty();
@@ -208,29 +208,38 @@ class SensGame {
   applyMissPenalty() {
     this.misses++;
     this.missesDisplay.textContent = this.misses;
-    this.lifeDisplay.textContent = Math.max(0, this.maxMisses - this.misses);
     
-    // Penalty: Slower interval
+    if (this.isLifeMode) {
+      const remaining = Math.max(0, this.maxMisses - this.misses);
+      this.lifeDisplay.textContent = remaining;
+      if (remaining === 0) {
+        this.endGame();
+        return;
+      }
+    }
+
     this.currentInterval = Math.min(this.initialInterval, this.currentInterval + this.intervalPenalty);
     this.intervalText.textContent = `${(this.currentInterval / 1000).toFixed(2)}s`;
-
-    if (this.misses >= this.maxMisses) {
-      this.endGame();
-    }
   }
 
   analyzeClick(event) {
     if (this.prevCellIndex === null) return;
     const prevRect = this.cells[this.prevCellIndex].getBoundingClientRect();
     const currRect = this.cells[this.activeCellIndex].getBoundingClientRect();
+    
     const prevCenter = { x: prevRect.left + prevRect.width / 2, y: prevRect.top + prevRect.height / 2 };
     const currCenter = { x: currRect.left + currRect.width / 2, y: currRect.top + currRect.height / 2 };
+    
     const dx = currCenter.x - prevCenter.x;
     const dy = currCenter.y - prevCenter.y;
     const targetDist = Math.sqrt(dx * dx + dy * dy);
-    if (targetDist < 20) return;
+    
+    if (targetDist < 10) return;
+
     const vcx = event.clientX - prevCenter.x;
     const vcy = event.clientY - prevCenter.y;
+
+    // Ratio along the vector from prev center to current center
     const overshootRatio = (vcx * dx + vcy * dy) / (targetDist * targetDist);
     this.offsets.push(overshootRatio);
   }
@@ -251,8 +260,8 @@ class SensGame {
   }
 
   showAnalysis() {
-    if (this.offsets.length < 3) {
-      this.analysisText.textContent = "Not enough data for a precise recommendation.";
+    if (this.offsets.length < 5) {
+      this.analysisText.textContent = "More data needed for precision center analysis.";
       this.recDisplay.textContent = "";
       return;
     }
@@ -261,18 +270,18 @@ class SensGame {
     let rec = "";
     let percent = 0;
     
-    if (avgOffset > 1.02) {
+    if (avgOffset > 1.01) {
       percent = Math.round((avgOffset - 1) * 100);
-      this.analysisText.textContent = `Pattern: Consistent Overshooting (Avg: ${percent}% past center).`;
-      rec = `REDUCE SENSITIVITY BY ~${percent}%`;
+      this.analysisText.textContent = `Trend: Consistently clicking past the exact center.`;
+      rec = `LOWER SENSITIVITY BY ~${percent}%`;
       this.recDisplay.className = "recommendation adjust";
-    } else if (avgOffset < 0.98) {
+    } else if (avgOffset < 0.99) {
       percent = Math.round((1 - avgOffset) * 100);
-      this.analysisText.textContent = `Pattern: Consistent Undershooting (Avg: ${percent}% before center).`;
-      rec = `INCREASE SENSITIVITY BY ~${percent}%`;
+      this.analysisText.textContent = `Trend: Consistently clicking before the exact center.`;
+      rec = `HIGHER SENSITIVITY BY ~${percent}%`;
       this.recDisplay.className = "recommendation adjust";
     } else {
-      this.analysisText.textContent = "Pattern: Highly accurate centering.";
+      this.analysisText.textContent = "Precision: Excellent centering on target midpoint.";
       rec = "SENSITIVITY IS OPTIMAL";
       this.recDisplay.className = "recommendation";
     }
@@ -288,19 +297,21 @@ class SensGame {
       data: {
         labels: this.graphData.labels,
         datasets: [{
-          label: 'Accuracy (%)',
+          label: 'Precision Accuracy (%)',
           data: this.graphData.accuracy,
           borderColor: '#00f2ff',
           backgroundColor: 'rgba(0, 242, 255, 0.1)',
           fill: true,
-          tension: 0.4
+          tension: 0.4,
+          pointRadius: 4,
+          pointBackgroundColor: '#ff4d00'
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
         scales: {
-          y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#94a3b8' } },
+          y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
           x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
         },
         plugins: {

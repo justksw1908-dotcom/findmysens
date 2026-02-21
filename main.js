@@ -67,6 +67,7 @@ class SensGame {
     this.restartBtn.addEventListener('click', () => {
       this.resultOverlay.classList.add('hidden');
       this.startOverlay.classList.remove('hidden');
+      this.startBtn.textContent = 'START TEST';
     });
 
     this.modeBtns.forEach(btn => {
@@ -158,14 +159,12 @@ class SensGame {
   nextTarget() {
     if (!this.isPlaying) return;
 
-    // Target timed out
     if (this.activeCellIndex !== null && !this.targetProcessed) {
       if (this.cells[this.activeCellIndex].classList.contains('active')) {
         this.applyMissPenalty();
       }
     }
 
-    // Clean up active class instantly (CSS handles the removal transition)
     this.cells.forEach(c => c.classList.remove('active'));
     this.targetProcessed = false;
     this.prevCellIndex = this.activeCellIndex;
@@ -227,6 +226,7 @@ class SensGame {
     const prevRect = this.cells[this.prevCellIndex].getBoundingClientRect();
     const currRect = this.cells[this.activeCellIndex].getBoundingClientRect();
     
+    // Exact center coordinates where the complementary dot is located
     const prevCenter = { x: prevRect.left + prevRect.width / 2, y: prevRect.top + prevRect.height / 2 };
     const currCenter = { x: currRect.left + currRect.width / 2, y: currRect.top + currRect.height / 2 };
     
@@ -239,7 +239,7 @@ class SensGame {
     const vcx = event.clientX - prevCenter.x;
     const vcy = event.clientY - prevCenter.y;
 
-    // Ratio along the vector from prev center to current center
+    // Dot product analysis to determine overshoot/undershoot relative to the central point
     const overshootRatio = (vcx * dx + vcy * dy) / (targetDist * targetDist);
     this.offsets.push(overshootRatio);
   }
@@ -261,7 +261,7 @@ class SensGame {
 
   showAnalysis() {
     if (this.offsets.length < 5) {
-      this.analysisText.textContent = "More data needed for precision center analysis.";
+      this.analysisText.textContent = "More data needed for precision center analysis. Try longer sessions!";
       this.recDisplay.textContent = "";
       return;
     }
@@ -272,16 +272,16 @@ class SensGame {
     
     if (avgOffset > 1.01) {
       percent = Math.round((avgOffset - 1) * 100);
-      this.analysisText.textContent = `Trend: Consistently clicking past the exact center.`;
+      this.analysisText.textContent = `Trend: Consistently clicking past the center dot.`;
       rec = `LOWER SENSITIVITY BY ~${percent}%`;
       this.recDisplay.className = "recommendation adjust";
     } else if (avgOffset < 0.99) {
       percent = Math.round((1 - avgOffset) * 100);
-      this.analysisText.textContent = `Trend: Consistently clicking before the exact center.`;
+      this.analysisText.textContent = `Trend: Consistently clicking before the center dot.`;
       rec = `HIGHER SENSITIVITY BY ~${percent}%`;
       this.recDisplay.className = "recommendation adjust";
     } else {
-      this.analysisText.textContent = "Precision: Excellent centering on target midpoint.";
+      this.analysisText.textContent = "Precision: Excellent centering on the neon dot.";
       rec = "SENSITIVITY IS OPTIMAL";
       this.recDisplay.className = "recommendation";
     }
@@ -322,10 +322,10 @@ class SensGame {
   }
 
   stopGame() {
-    this.endGame();
-    this.resultOverlay.classList.add('hidden');
-    this.startOverlay.classList.remove('hidden');
-    this.startBtn.textContent = 'RESTART TEST';
+    // If we stop manually, show the results of the current progress
+    if (this.isPlaying) {
+      this.endGame();
+    }
   }
 }
 

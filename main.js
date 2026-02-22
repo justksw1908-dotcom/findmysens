@@ -5,13 +5,43 @@
 class SensGame {
   constructor() {
     this.mouseData = {
-      'Logitech': ['G Pro X Superlight', 'G Pro X Superlight 2', 'G304', 'G502 Hero', 'G703', 'G Pro Wireless'],
-      'Razer': ['DeathAdder V3 Pro', 'Viper V2 Pro', 'Basilisk V3', 'DeathAdder Essential', 'Viper Mini', 'Orochi V2'],
-      'Zowie': ['EC2-C', 'FK2-B', 'ZA13-C', 'S2-C', 'EC1-CW'],
-      'SteelSeries': ['Aerox 3', 'Rival 3', 'Sensei Ten', 'Prime Wireless', 'Aerox 5'],
-      'Pulsar': ['X2 V2', 'X2H', 'Xlite V3', 'X2 Mini', 'Xlite V2'],
-      'Finalmouse': ['UltralightX', 'Starlight-12', 'Air58'],
-      'VGN/VXE': ['Dragonfly F1 Pro', 'VXE R1 Pro']
+      'Logitech': [
+        'G Pro Wireless', 'G Pro X Superlight', 'G Pro X Superlight 2', 'G304', 'G102', 'G402', 'G403', 
+        'G502 Hero', 'G502 X', 'G502 X Plus', 'G502 Lightspeed', 'G603', 'G604', 'G703', 'G903', 
+        'MX Master 3', 'MX Anywhere 3'
+      ],
+      'Razer': [
+        'Viper', 'Viper Mini', 'Viper V2 Pro', 'Viper V3 Pro', 'Viper 8KHz', 'Viper Ultimate',
+        'DeathAdder V2', 'DeathAdder V2 Mini', 'DeathAdder V2 Pro', 'DeathAdder V3', 'DeathAdder V3 Pro',
+        'DeathAdder Essential', 'Basilisk V3', 'Basilisk Ultimate', 'Cobra', 'Cobra Pro', 'Orochi V2', 'Naga Pro'
+      ],
+      'Zowie': [
+        'EC1-A', 'EC2-A', 'EC1-B', 'EC2-B', 'EC1-C', 'EC2-C', 'EC3-C', 'EC1-CW', 'EC2-CW', 'EC3-CW',
+        'FK1', 'FK2', 'FK1+', 'FK1-B', 'FK2-B', 'FK1-C', 'FK2-C',
+        'ZA11', 'ZA12', 'ZA13', 'ZA11-B', 'ZA12-B', 'ZA13-B', 'ZA11-C', 'ZA12-C', 'ZA13-C',
+        'S1', 'S2', 'S1-B', 'S2-B', 'S1-C', 'S2-C'
+      ],
+      'SteelSeries': [
+        'Aerox 3', 'Aerox 3 Wireless', 'Aerox 5', 'Aerox 5 Wireless', 'Aerox 9 Wireless',
+        'Rival 3', 'Rival 3 Wireless', 'Rival 5', 'Rival 600', 'Rival 710',
+        'Sensei Ten', 'Sensei 310', 'Prime', 'Prime+', 'Prime Wireless', 'Prime Mini'
+      ],
+      'Pulsar': [
+        'Xlite V2', 'Xlite V2 Mini', 'Xlite V3', 'Xlite V3 Mini', 'Xlite V3 Size 3',
+        'X2', 'X2 Mini', 'X2 V2', 'X2 V2 Mini', 'X2H', 'X2H Mini', 'X2A', 'X2A Mini'
+      ],
+      'Vaxee': [
+        'NP-01', 'NP-01S', 'NP-01G', 'AX', 'AXG', 'XE', 'XE Wireless', 'OUTSET AX'
+      ],
+      'Finalmouse': [
+        'UltralightX', 'Starlight-12', 'Air58', 'Ultralight 2', 'Scream One'
+      ],
+      'VGN/VXE': [
+        'Dragonfly F1', 'Dragonfly F1 Pro', 'Dragonfly F1 Pro Max', 'VXE R1', 'VXE R1 Pro', 'VXE R1 Pro Max'
+      ],
+      'LAMZU': [
+        'Atlantis', 'Atlantis Mini', 'Atlantis OG V2', 'Thorn', 'Maya'
+      ]
     };
 
     this.userInfo = {
@@ -24,7 +54,6 @@ class SensGame {
 
     this.gridContainer = document.getElementById('grid-container');
     this.hitsDisplay = document.getElementById('hits-count');
-    // ... rest of constructor initialization
     this.missesDisplay = document.getElementById('misses-count');
     this.lifeDisplay = document.getElementById('life-left');
     this.timerDisplay = document.getElementById('timer-display');
@@ -87,11 +116,28 @@ class SensGame {
     this.timerInterval = null;
     this.graphUpdateInterval = null;
 
-    this.offsets = []; // Ratio of (actual movement / target distance)
-    this.pixelDistances = []; // Raw px from center
+    this.offsets = []; 
+    this.pixelDistances = []; 
     this.graphData = { labels: [], accuracy: [], avgDistance: [] };
     this.accuracyChart = null;
     this.distanceChart = null;
+
+    this.multipliers = {
+      'cs2': 1,
+      'apex': 1,
+      'tf2': 1,
+      'valorant': 1 / 3.181818,
+      'ow2': 3.333333,
+      'cod': 3.333333,
+      'destiny2': 3.333333,
+      'r6': 3.839 
+    };
+
+    this.gameNames = {
+      'valorant': '발로란트', 'cs2': 'CS2', 'apex': '에이펙스', 
+      'ow2': '오버워치 2', 'cod': '콜옵 워존', 'r6': '레인보우 식스', 
+      'destiny2': '데스티니 2', 'tf2': '팀포 2'
+    };
 
     this.init();
     this.initConverter();
@@ -108,16 +154,17 @@ class SensGame {
       }
     });
     this.stopBtn.addEventListener('click', () => this.stopGame());
-    this.restartBtn.addEventListener('click', () => {
-      this.resultOverlay.classList.add('hidden');
-      this.startOverlay.classList.remove('hidden');
-      this.startBtn.textContent = 'START TEST';
-    });
+    this.restartBtn.addEventListener('click', () => this.resetGame());
 
     window.addEventListener('keydown', (e) => {
-      if (e.code === 'Space' && this.isPlaying) {
-        e.preventDefault();
-        this.stopGame();
+      if (e.code === 'Space') {
+        if (this.isPlaying) {
+          e.preventDefault();
+          this.stopGame();
+        } else if (!this.resultOverlay.classList.contains('hidden')) {
+          e.preventDefault();
+          this.resetGame();
+        }
       }
     });
 
@@ -140,8 +187,14 @@ class SensGame {
     this.editBtn.addEventListener('click', () => this.openSetupModal());
   }
 
+  resetGame() {
+    this.resultOverlay.classList.add('hidden');
+    this.startOverlay.classList.remove('hidden');
+    this.startBtn.textContent = 'START TEST';
+    this.resetStats();
+  }
+
   initSetupModal() {
-    // Step 1: Brand Selection
     this.brandBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         const brand = btn.dataset.brand;
@@ -153,7 +206,6 @@ class SensGame {
       });
     });
 
-    // Step 2 & 3 Navigation
     this.nextBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         const currentStep = parseInt(btn.dataset.currentStep);
@@ -162,7 +214,6 @@ class SensGame {
       });
     });
 
-    // Step 3: Finish
     this.finishBtn.addEventListener('click', () => {
       this.userInfo.model = this.modelSelect.value;
       this.userInfo.game = document.getElementById('setup-game-select').value;
@@ -194,6 +245,10 @@ class SensGame {
       option.textContent = model;
       this.modelSelect.appendChild(option);
     });
+    const otherOption = document.createElement('option');
+    otherOption.value = 'Other';
+    otherOption.textContent = '기타 (Other)';
+    this.modelSelect.appendChild(otherOption);
   }
 
   openSetupModal() {
@@ -221,25 +276,7 @@ class SensGame {
 
     if (!this.gameSelect || !this.sensInput || !this.resultsDiv) return;
 
-    // CS2 (Source Engine)를 기준(1.0)으로 했을 때의 각 게임별 변환 상수
-    const multipliers = {
-      'cs2': 1,
-      'apex': 1,
-      'tf2': 1,
-      'valorant': 1 / 3.181818,
-      'ow2': 3.333333,
-      'cod': 3.333333,
-      'destiny2': 3.333333,
-      'r6': 3.839 // default multiplier 0.02 기준
-    };
-
-    const gameNames = {
-      'valorant': '발로란트', 'cs2': 'CS2', 'apex': '에이펙스', 
-      'ow2': '오버워치 2', 'cod': '콜옵 워존', 'r6': '레인보우 식스', 
-      'destiny2': '데스티니 2', 'tf2': '팀포 2'
-    };
-
-    const updateConversion = () => {
+    this.updateConversion = () => {
       if (!this.sensInput.value) {
         this.resultsDiv.innerHTML = '';
         return;
@@ -248,16 +285,13 @@ class SensGame {
       const currentSens = parseFloat(this.sensInput.value);
       const selectedGame = this.gameSelect.value;
       
-      // 분석된 오차값 가져오기 (오버플릭은 감도를 낮추고, 언더플릭은 높임)
       const deviationText = this.deviationDisplay.textContent.replace('%', '').replace('+', '');
       const deviationPercent = parseFloat(deviationText) || 0;
       const adjustmentFactor = 1 - (deviationPercent / 100); 
       const perfectSens = currentSens * adjustmentFactor;
 
-      // 1. 현재 입력된 게임의 감도를 공통 기준(CS2)으로 역산
-      const baseCs2Sens = perfectSens / multipliers[selectedGame];
+      const baseCs2Sens = perfectSens / this.multipliers[selectedGame];
 
-      // 2. 결과를 동적 HTML로 생성
       let resultsHtml = `
         <div style="color: #00f2ff; margin-bottom: 15px; font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
           💡 내 에임 오차가 보정된 게임별 추천 감도
@@ -265,15 +299,14 @@ class SensGame {
         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center; font-size: 11px;">
       `;
 
-      for (const [key, multi] of Object.entries(multipliers)) {
+      for (const [key, multi] of Object.entries(this.multipliers)) {
         const convertedSens = baseCs2Sens * multi;
-        // 선택한 게임은 강조 표시
         const bg = key === selectedGame ? 'rgba(0, 242, 255, 0.2)' : 'rgba(255,255,255,0.05)';
         const border = key === selectedGame ? '1px solid #00f2ff' : '1px solid rgba(255,255,255,0.1)';
         
         resultsHtml += `
           <div style="background: ${bg}; padding: 8px 4px; border-radius: 6px; border: ${border};">
-            ${gameNames[key]}<br><strong style="font-size: 14px; color: #fff;">${convertedSens.toFixed(3)}</strong>
+            ${this.gameNames[key]}<br><strong style="font-size: 14px; color: #fff;">${convertedSens.toFixed(3)}</strong>
           </div>
         `;
       }
@@ -282,8 +315,8 @@ class SensGame {
       this.resultsDiv.innerHTML = resultsHtml;
     };
 
-    this.gameSelect.addEventListener('change', updateConversion);
-    this.sensInput.addEventListener('input', updateConversion);
+    this.gameSelect.addEventListener('change', this.updateConversion);
+    this.sensInput.addEventListener('input', this.updateConversion);
   }
 
   createGrid() {
@@ -451,7 +484,6 @@ class SensGame {
     const vcx = event.clientX - prevCenter.x;
     const vcy = event.clientY - prevCenter.y;
 
-    // overshootRatio: 1.0 means perfect distance, > 1.0 means too far
     const overshootRatio = (vcx * dx + vcy * dy) / (targetDist * targetDist);
     this.offsets.push(overshootRatio);
   }
@@ -471,6 +503,26 @@ class SensGame {
 
     this.showAnalysis();
     this.renderGraphs();
+    this.syncConverter();
+  }
+
+  syncConverter() {
+    const gameMap = {
+      'Valorant': 'valorant',
+      'CS2': 'cs2',
+      'Apex': 'apex',
+      'Overwatch 2': 'ow2'
+    };
+
+    if (this.userInfo.game && gameMap[this.userInfo.game]) {
+      this.gameSelect.value = gameMap[this.userInfo.game];
+    }
+    
+    if (this.userInfo.sens) {
+      this.sensInput.value = this.userInfo.sens;
+    }
+
+    if (this.updateConversion) this.updateConversion();
   }
 
   showAnalysis() {
@@ -502,7 +554,6 @@ class SensGame {
     const avgOffsetRatio = this.offsets.reduce((a, b) => a + b, 0) / this.offsets.length;
     const deviationPercent = (avgOffsetRatio - 1) * 100;
     
-    // Always show the deviation percentage
     const sign = deviationPercent >= 0 ? "+" : "";
     this.deviationDisplay.textContent = `${sign}${deviationPercent.toFixed(1)}%`;
     this.deviationDisplay.className = "deviation-value " + (deviationPercent > 1 ? "plus" : (deviationPercent < -1 ? "minus" : "perfect"));

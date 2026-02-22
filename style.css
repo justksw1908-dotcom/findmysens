@@ -1,3 +1,69 @@
+/* Brand Button Styles with Images */
+.brand-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  padding: 1.5rem 1rem;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.brand-btn img {
+  width: auto;
+  height: 40px;
+  max-width: 100%;
+  object-fit: contain;
+  filter: grayscale(1) brightness(2);
+  transition: all 0.2s;
+}
+
+.brand-btn span {
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+}
+
+.brand-btn:hover, .brand-btn.active {
+  border-color: var(--accent-color);
+  background: rgba(0, 242, 255, 0.1);
+  color: var(--accent-color);
+  box-shadow: 0 0 15px rgba(0, 242, 255, 0.2);
+}
+
+.brand-btn:hover img, .brand-btn.active img {
+  filter: grayscale(0) brightness(1);
+}
+
+#restart-btn {
+  margin-top: 2rem;
+  width: 100%;
+  padding: 1.2rem;
+  font-size: 1.2rem;
+  letter-spacing: 2px;
+  background: var(--accent-color);
+  color: var(--bg-color);
+  border: none;
+  border-radius: 4px;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 15px rgba(0, 242, 255, 0.3);
+}
+
+#restart-btn:hover {
+  background: #fff;
+  box-shadow: 0 6px 20px rgba(255, 255, 255, 0.4);
+  transform: translateY(-2px);
+}
+
 /* Setup Modal Styles */
 .modal-overlay {
   position: fixed;
@@ -41,24 +107,6 @@
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 1rem;
-}
-
-.brand-btn {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--text-primary);
-  padding: 1rem;
-  font-family: 'Rajdhani', sans-serif;
-  font-weight: 700;
-  cursor: pointer;
-  border-radius: 4px;
-  transition: all 0.2s;
-}
-
-.brand-btn:hover, .brand-btn.active {
-  border-color: var(--accent-color);
-  background: rgba(0, 242, 255, 0.1);
-  color: var(--accent-color);
 }
 
 .form-group {

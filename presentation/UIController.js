@@ -137,6 +137,9 @@ export class UIController {
           } else {
             this.gameManager.handleMiss();
           }
+        } else {
+          // background click (grid-container itself)
+          this.gameManager.handleMiss();
         }
       }
     });
@@ -206,6 +209,13 @@ export class UIController {
     this.graphData.labels.push(elapsed);
     this.graphData.accuracy.push(accuracy);
     this.graphData.avgDistance.push(avgDist);
+
+    // Performance Defense: Cap data points to 100
+    if (this.graphData.labels.length > 100) {
+      this.graphData.labels = this.graphData.labels.slice(-100);
+      this.graphData.accuracy = this.graphData.accuracy.slice(-100);
+      this.graphData.avgDistance = this.graphData.avgDistance.slice(-100);
+    }
   }
 
   createGrid() {

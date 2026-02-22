@@ -14,6 +14,9 @@ export class GameManager {
     this.timerIntervalId = null;
     this.targetTimeoutId = null;
     
+    this.lastHitTime = 0; // Guard for rapid double clicks
+    this.HIT_COOLDOWN = 150; // ms
+    
     this.listeners = {};
   }
 
@@ -29,12 +32,17 @@ export class GameManager {
   }
 
   start(config) {
+    // Defense: Clear any existing intervals/timeouts first
+    if (this.timerIntervalId) clearInterval(this.timerIntervalId);
+    if (this.targetTimeoutId) clearTimeout(this.targetTimeoutId);
+
     this.isLifeMode = config.isLifeMode;
     this.hits = 0;
     this.misses = 0;
     this.currentInterval = 1000;
     this.isPlaying = true;
     this.startTime = Date.now();
+    this.lastHitTime = 0;
     
     this.emit('gameStarted', { isLifeMode: this.isLifeMode });
     this.spawnTarget();
@@ -47,8 +55,8 @@ export class GameManager {
   stop() {
     if (!this.isPlaying) return;
     this.isPlaying = false;
-    clearInterval(this.timerIntervalId);
-    clearTimeout(this.targetTimeoutId);
+    if (this.timerIntervalId) clearInterval(this.timerIntervalId);
+    if (this.targetTimeoutId) clearTimeout(this.targetTimeoutId);
     this.emit('gameEnded', {
       hits: this.hits,
       misses: this.misses,
@@ -81,6 +89,11 @@ export class GameManager {
 
   handleHit() {
     if (!this.isPlaying) return;
+    
+    const now = Date.now();
+    if (now - this.lastHitTime < this.HIT_COOLDOWN) return; // Ignore rapid clicks
+    
+    this.lastHitTime = now;
     clearTimeout(this.targetTimeoutId);
     this.hits++;
     this.currentInterval = Math.max(this.minInterval, this.currentInterval - this.intervalDecrease);

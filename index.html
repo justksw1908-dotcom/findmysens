@@ -4,6 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FindMySens - FPS Mouse Sensitivity Checker</title>
+    <style>
+        :root {
+            --bg-main: #121212;
+            --bg-panel: rgba(255, 255, 255, 0.05);
+            --bg-panel-hover: rgba(255, 255, 255, 0.1);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --accent-cyan: #00f2ff;
+            --accent-magenta: #ff00ff;
+            --accent-orange: #ff4d00;
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --status-success: #22c55e;
+            --status-error: #ef4444;
+        }
+    </style>
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-0WL5YHKLTK"></script>
     <script>
@@ -22,7 +37,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -167,10 +182,10 @@
                             </div>
                         </div>
 
-                        <div id="converter-section" style="margin-top: 25px; padding: 20px; background: rgba(0, 0, 0, 0.4); border-radius: 8px; text-align: left; width: 100%; box-sizing: border-box;">
-                          <h3 style="color: #fff; margin-top: 0; margin-bottom: 12px; font-size: 16px; font-family: 'Orbitron', sans-serif;" data-i18n="global_converter">🎮 글로벌 게임 감도 변환기</h3>
-                          <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                            <select id="game-select" style="padding: 10px; background: #2a2a35; color: #fff; border: 1px solid #444; border-radius: 4px; outline: none; flex: 1; font-size: 14px;">
+                        <div id="converter-section">
+                          <h3 data-i18n="global_converter">🎮 글로벌 게임 감도 변환기</h3>
+                          <div class="converter-controls">
+                            <select id="game-select">
                               <option value="valorant">발로란트 (Valorant)</option>
                               <option value="cs2">CS2</option>
                               <option value="apex">Apex Legends</option>
@@ -180,9 +195,9 @@
                               <option value="destiny2">Destiny 2</option>
                               <option value="tf2">Team Fortress 2</option>
                             </select>
-                            <input type="number" id="current-sens" placeholder="In-game Sens" step="0.01" style="padding: 10px; background: #2a2a35; color: #fff; border: 1px solid #444; border-radius: 4px; outline: none; flex: 1.5; font-size: 14px;">
+                            <input type="number" id="current-sens" placeholder="In-game Sens" step="0.01">
                           </div>
-                          <div id="converted-results" style="font-size: 14px; color: #ccc;">
+                          <div id="converted-results">
                             </div>
                         </div>
                         <button id="restart-btn" data-i18n="restart_test">RESTART TEST (Space)</button>
@@ -295,6 +310,6 @@
         </div>
     </div>
 
-    <script type="module" src="main.js"></script>
+    <script type="module" src="presentation/index.js"></script>
 </body>
 </html>

@@ -1,20 +1,11 @@
-/**
- * FindMySens - FPS Mouse Sensitivity Checker
- */
+import { mouseDatabase } from '../infrastructure/MouseDatabase.js';
 
-class SensGame {
-  constructor() {
-    this.mouseData = {
-      'Logitech': ['G Pro Wireless', 'G Pro X Superlight', 'G Pro X Superlight 2', 'G304', 'G102', 'G402', 'G403', 'G502 Hero', 'G502 X', 'G502 X Plus', 'G502 Lightspeed', 'G603', 'G604', 'G703', 'G903'],
-      'Razer': ['Viper', 'Viper Mini', 'Viper V2 Pro', 'Viper V3 Pro', 'DeathAdder V2', 'DeathAdder V3 Pro', 'Basilisk V3', 'Cobra', 'Orochi V2'],
-      'Zowie': ['EC1-C', 'EC2-C', 'EC3-C', 'EC1-CW', 'EC2-CW', 'FK1-C', 'FK2-C', 'ZA11-C', 'ZA12-C', 'ZA13-C', 'S1-C', 'S2-C'],
-      'SteelSeries': ['Aerox 3', 'Aerox 5', 'Rival 3', 'Rival 5', 'Sensei Ten', 'Prime Wireless'],
-      'Pulsar': ['Xlite V3', 'Xlite V3 Mini', 'X2 V2', 'X2 V2 Mini', 'X2H', 'X2H Mini'],
-      'Vaxee': ['NP-01', 'NP-01S', 'AX', 'XE', 'OUTSET AX'],
-      'Finalmouse': ['UltralightX', 'Starlight-12', 'Air58'],
-      'VGN/VXE': ['Dragonfly F1 Pro', 'VXE R1 Pro'],
-      'LAMZU': ['Atlantis', 'Atlantis Mini', 'Thorn', 'Maya']
-    };
+export class UIController {
+  constructor(gameManager, sensitivityCalculator, scoreSystem, rankingRepository) {
+    this.gameManager = gameManager;
+    this.calculator = sensitivityCalculator;
+    this.scoreSystem = scoreSystem;
+    this.rankingRepo = rankingRepository;
 
     this.translations = {
       en: {
@@ -43,14 +34,14 @@ class SensGame {
       },
       ja: {
         hits: "ヒット", misses: "ミス", time: "時間", stop_test: "テスト終了", to_stop: "終了するには",
-        user_info: "ユーザー情報", mouse: "マウス", game_sens: "ゲーム / 感度", edit_info: "情報修正",
+        user_info: "ユーザー情報", mouse: "マウス", game_sens: "ゲーム / 감도", edit_info: "情報修正",
         life_mode: "ライフモード (5回ミスで終了)", start_test: "テスト開始", hint_text: "ターゲットの中心点に基づいて精度を分析します。",
         view_leaderboard: "TOP 50 ランキングを表示", test_summary: "テスト結果", precision_grade: "精度ランク",
         final_score: "最終スコア", sens_analysis: "感度分析", avg_aim_deviation: "平均エイム偏差",
         register_ranking: "スコアを登録", submit: "送信", global_converter: "🎮 感度コンバーター",
         restart_test: "再試行 (Space)", select_brand: "マウスブランドを選択", select_model: "モデルを選択",
         select_mouse_model: "マウスモデルを選択", next: "次へ", enter_settings: "ゲーム設定を入力",
-        main_game: "メインゲーム", ingame_sens: "インゲーム感度", mouse_dpi: "マウスDPI", complete: "完了",
+        main_game: "メインゲーム", ingame_sens: "인게임感度", mouse_dpi: "マウスDPI", complete: "完了",
         top_50_leaderboard: "TOP 50 リーダーボード", rank: "順位", name: "名前", score: "スコア"
       },
       zh: {
@@ -68,24 +59,18 @@ class SensGame {
     };
 
     this.userInfo = { brand: '', model: '', dpi: '', game: '', sens: '' };
-    this.currentLang = 'en';
-    this.isPlaying = false;
-    this.isLifeMode = false;
-    this.hits = 0;
-    this.misses = 0;
-    this.currentInterval = 1000;
-    this.offsets = [];
     this.pixelDistances = [];
-    this.graphData = { labels: [], accuracy: [], avgDistance: [] };
+    this.offsets = [];
+    this.currentMode = 'standard';
+    this.cells = [];
 
-    this.initDOM();
-    this.initEvents();
-    this.initConverter();
-    this.initSetupModal();
-    this.loadLeaderboard();
+    this.cacheDOM();
+    this.bindEvents();
+    this.setupGameManagerListeners();
+    this.createGrid();
   }
 
-  initDOM() {
+  cacheDOM() {
     this.gridContainer = document.getElementById('grid-container');
     this.hitsDisplay = document.getElementById('hits-count');
     this.missesDisplay = document.getElementById('misses-count');
@@ -102,12 +87,15 @@ class SensGame {
     this.modelSelect = document.getElementById('mouse-model-select');
     this.sidebar = document.getElementById('user-info-sidebar');
     this.leaderboardModal = document.getElementById('leaderboard-modal');
+    this.gameSelect = document.getElementById('game-select');
+    this.sensInput = document.getElementById('current-sens');
+    this.resultsDiv = document.getElementById('converted-results');
   }
 
-  initEvents() {
-    this.startBtn.addEventListener('click', () => this.userInfo.brand ? this.startGame() : this.openSetupModal());
-    this.stopBtn.addEventListener('click', () => this.stopGame());
-    this.restartBtn.addEventListener('click', () => this.resetGame());
+  bindEvents() {
+    this.startBtn.addEventListener('click', () => this.userInfo.brand ? this.gameManager.start({ isLifeMode: this.lifeToggle.checked }) : this.openSetupModal());
+    this.stopBtn.addEventListener('click', () => this.gameManager.stop());
+    this.restartBtn.addEventListener('click', () => this.resetUI());
     this.langSelect.addEventListener('change', (e) => this.changeLanguage(e.target.value));
     
     document.getElementById('view-leaderboard-btn').addEventListener('click', () => this.showLeaderboard());
@@ -116,8 +104,8 @@ class SensGame {
 
     window.addEventListener('keydown', (e) => {
       if (e.code === 'Space') {
-        if (this.isPlaying) { e.preventDefault(); this.stopGame(); }
-        else if (!this.resultOverlay.classList.contains('hidden')) { e.preventDefault(); this.resetGame(); }
+        if (this.gameManager.isPlaying) { e.preventDefault(); this.gameManager.stop(); }
+        else if (!this.resultOverlay.classList.contains('hidden')) { e.preventDefault(); this.resetUI(); }
       }
     });
 
@@ -132,30 +120,76 @@ class SensGame {
     });
 
     this.gridContainer.addEventListener('mousedown', (e) => {
-      if (this.isPlaying) {
+      if (this.gameManager.isPlaying) {
         const cell = e.target.closest('.grid-cell');
-        if (cell) this.handleCellClick(cell, e);
+        if (cell) {
+          const rect = cell.getBoundingClientRect();
+          const cx = rect.left + rect.width / 2;
+          const cy = rect.top + rect.height / 2;
+          const dist = Math.sqrt(Math.pow(e.clientX - cx, 2) + Math.pow(e.clientY - cy, 2));
+          
+          if (cell.classList.contains('active')) {
+            this.pixelDistances.push(dist);
+            this.gameManager.handleHit();
+          } else {
+            this.gameManager.handleMiss();
+          }
+        }
       }
     });
 
-    this.currentMode = 'standard';
-    this.createGrid();
+    this.initSetupModal();
+    this.initConverter();
   }
 
-  changeLanguage(lang) {
-    this.currentLang = lang;
-    document.querySelectorAll('[data-i18n]').forEach(el => {
-      const key = el.getAttribute('data-i18n');
-      if (this.translations[lang][key]) {
-        el.textContent = this.translations[lang][key];
-      }
+  setupGameManagerListeners() {
+    this.gameManager.on('gameStarted', (data) => {
+      this.pixelDistances = [];
+      this.offsets = [];
+      this.startOverlay.classList.add('hidden');
+      this.resultOverlay.classList.add('hidden');
+      this.stopBtn.classList.remove('hidden');
+      document.querySelector('.key-hint-container').classList.remove('hidden');
+      this.lifeDisplay.textContent = data.isLifeMode ? '5' : '∞';
+      this.hitsDisplay.textContent = '0';
+      this.missesDisplay.textContent = '0';
     });
-    // Update placeholders
-    document.getElementById('rank-name').placeholder = lang === 'ko' ? '이름' : (lang === 'ja' ? '名前' : (lang === 'zh' ? '姓名' : 'Name'));
+
+    this.gameManager.on('timerUpdated', (timeStr) => {
+      this.timerDisplay.textContent = timeStr;
+    });
+
+    this.gameManager.on('targetSpawned', (pickIndexFn) => {
+      const idx = pickIndexFn(this.cells.length);
+      this.cells[idx].classList.add('active');
+    });
+
+    this.gameManager.on('targetExpired', (idx) => {
+      if (idx !== null) this.cells[idx].classList.remove('active');
+    });
+
+    this.gameManager.on('hit', (data) => {
+      this.hitsDisplay.textContent = data.hits;
+      document.getElementById('interval-text').textContent = (data.interval / 1000).toFixed(2) + 's';
+    });
+
+    this.gameManager.on('miss', (data) => {
+      this.missesDisplay.textContent = data.misses;
+    });
+
+    this.gameManager.on('lifeUpdated', (life) => {
+      this.lifeDisplay.textContent = life;
+    });
+
+    this.gameManager.on('gameEnded', (data) => {
+      this.stopBtn.classList.add('hidden');
+      this.resultOverlay.classList.remove('hidden');
+      this.renderResults(data);
+    });
   }
 
   createGrid() {
-    const modes = { standard: { cols: 16, rows: 9, side: 70 }, small: { cols: 32, rows: 18, side: 35 } };
+    const modes = { standard: { cols: 16, rows: 9 }, small: { cols: 32, rows: 18 } };
     const config = modes[this.currentMode];
     this.gridContainer.style.gridTemplateColumns = `repeat(${config.cols}, 1fr)`;
     this.gridContainer.style.gridTemplateRows = `repeat(${config.rows}, 1fr)`;
@@ -172,92 +206,28 @@ class SensGame {
     }
   }
 
-  startGame() {
-    this.isLifeMode = this.lifeToggle.checked;
-    this.resetStats();
-    this.isPlaying = true;
-    this.startOverlay.classList.add('hidden');
-    this.resultOverlay.classList.add('hidden');
-    this.stopBtn.classList.remove('hidden');
-    document.querySelector('.key-hint-container').classList.remove('hidden');
+  changeLanguage(lang) {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      if (this.translations[lang][key]) el.textContent = this.translations[lang][key];
+    });
+    document.getElementById('rank-name').placeholder = this.translations[lang].name;
+  }
+
+  renderResults(data) {
+    const avgDist = this.pixelDistances.reduce((a, b) => a + b, 0) / (this.pixelDistances.length || 1);
+    const accuracy = (data.hits / (data.hits + data.misses || 1)) * 100;
+    const grade = this.calculator.calculateGrade(accuracy, avgDist);
     
-    this.startTime = Date.now();
-    this.nextTarget();
-    this.timerInterval = setInterval(() => this.updateTimer(), 100);
-    this.graphUpdateInterval = setInterval(() => this.recordGraphSnapshot(), 2000);
-  }
-
-  resetStats() {
-    this.hits = 0; this.misses = 0; this.offsets = []; this.pixelDistances = [];
-    this.graphData = { labels: [], accuracy: [], avgDistance: [] };
-    this.hitsDisplay.textContent = '0';
-    this.missesDisplay.textContent = '0';
-    this.lifeDisplay.textContent = this.isLifeMode ? '5' : '∞';
-    this.timerDisplay.textContent = '00:00';
-    this.currentInterval = 1000;
-    this.cells.forEach(c => c.classList.remove('active'));
-  }
-
-  updateTimer() {
-    const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
-    const m = Math.floor(elapsed / 60).toString().padStart(2, '0');
-    const s = (elapsed % 60).toString().padStart(2, '0');
-    this.timerDisplay.textContent = `${m}:${s}`;
-  }
-
-  nextTarget() {
-    if (!this.isPlaying) return;
-    this.cells.forEach(c => c.classList.remove('active'));
-    this.activeCellIndex = Math.floor(Math.random() * this.cells.length);
-    this.cells[this.activeCellIndex].classList.add('active');
-    this.timeoutId = setTimeout(() => {
-      this.applyMiss();
-      this.nextTarget();
-    }, this.currentInterval);
-  }
-
-  handleCellClick(cell, e) {
-    if (cell.classList.contains('active')) {
-      clearTimeout(this.timeoutId);
-      this.analyzeClick(e);
-      this.hits++;
-      this.hitsDisplay.textContent = this.hits;
-      this.currentInterval = Math.max(300, this.currentInterval - 10);
-      this.nextTarget();
-    } else {
-      this.applyMiss();
-    }
-  }
-
-  applyMiss() {
-    this.misses++;
-    this.missesDisplay.textContent = this.misses;
-    if (this.isLifeMode) {
-      const life = 5 - this.misses;
-      this.lifeDisplay.textContent = life;
-      if (life <= 0) this.endGame();
-    }
-  }
-
-  analyzeClick(e) {
-    const rect = this.cells[this.activeCellIndex].getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    const dist = Math.sqrt(Math.pow(e.clientX - cx, 2) + Math.pow(e.clientY - cy, 2));
-    this.pixelDistances.push(dist);
-  }
-
-  endGame() {
-    this.isPlaying = false;
-    clearTimeout(this.timeoutId);
-    clearInterval(this.timerInterval);
-    clearInterval(this.graphUpdateInterval);
-    this.stopBtn.classList.add('hidden');
-    this.resultOverlay.classList.remove('hidden');
-    this.showAnalysis();
+    const gradeEl = document.getElementById('final-grade');
+    gradeEl.textContent = grade;
+    gradeEl.className = `grade-value ${grade.toLowerCase()}`;
     
-    if (this.isLifeMode) {
-      const score = this.calculateScore();
+    document.getElementById('final-hits').textContent = data.hits;
+    document.getElementById('final-time').textContent = data.timeString;
+
+    if (this.gameManager.isLifeMode) {
+      const score = this.scoreSystem.calculateScore(data.hits, data.misses, data.finalInterval);
       document.getElementById('life-mode-score-box').classList.remove('hidden');
       document.getElementById('final-score-value').textContent = score;
       document.getElementById('ranking-reg-section').classList.remove('hidden');
@@ -265,68 +235,40 @@ class SensGame {
       document.getElementById('life-mode-score-box').classList.add('hidden');
       document.getElementById('ranking-reg-section').classList.add('hidden');
     }
+
     this.syncConverter();
   }
 
-  calculateScore() {
-    const accuracy = (this.hits / (this.hits + this.misses)) * 100;
-    return Math.floor((this.hits * 100) + (accuracy * 50) + Math.max(0, 1000 - (this.currentInterval)));
+  syncConverter() {
+    const map = { 'Valorant': 'valorant', 'CS2': 'cs2', 'Apex': 'apex', 'Overwatch 2': 'ow2' };
+    if (map[this.userInfo.game]) this.gameSelect.value = map[this.userInfo.game];
+    this.sensInput.value = this.userInfo.sens;
+    this.updateConversion();
   }
 
-  showAnalysis() {
-    const avgDist = this.pixelDistances.reduce((a, b) => a + b, 0) / (this.pixelDistances.length || 1);
-    const accuracy = (this.hits / (this.hits + this.misses || 1)) * 100;
-    let grade = 'D';
-    if (accuracy > 95 && avgDist < 10) grade = 'SSS';
-    else if (accuracy > 90 && avgDist < 15) grade = 'SS';
-    else if (accuracy > 85) grade = 'S';
-    else if (accuracy > 75) grade = 'A';
-    else if (accuracy > 60) grade = 'B';
-    
-    const finalGradeEl = document.getElementById('final-grade');
-    finalGradeEl.textContent = grade;
-    finalGradeEl.className = `grade-value ${grade.toLowerCase()}`;
-    document.getElementById('final-hits').textContent = this.hits;
-    document.getElementById('final-time').textContent = this.timerDisplay.textContent;
+  initConverter() {
+    const update = () => {
+      const s = parseFloat(this.sensInput.value);
+      if (!s) return;
+      const gameNames = { valorant: 'Valorant', cs2: 'CS2', apex: 'Apex', ow2: 'OW2', cod: 'CoD', r6: 'R6', destiny2: 'D2', tf2: 'TF2' };
+      const converted = this.calculator.calculateAdjustedSens(s, this.gameSelect.value, 0); 
+      this.resultsDiv.innerHTML = `<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">` + 
+        Object.entries(converted).map(([k, v]) => `
+          <div class="converter-result-card">
+            ${gameNames[k] || k}<br><b class="converter-result-value">${v.toFixed(3)}</b>
+          </div>
+        `).join('') + `</div>`;
+    };
+    this.gameSelect.addEventListener('change', update);
+    this.sensInput.addEventListener('input', update);
+    this.updateConversion = update;
   }
-
-  submitRank() {
-    const name = document.getElementById('rank-name').value || 'Anonymous';
-    const country = document.getElementById('rank-country').value;
-    const score = parseInt(document.getElementById('final-score-value').textContent);
-    const leaderboard = JSON.parse(localStorage.getItem('fms_leaderboard') || '[]');
-    leaderboard.push({ name, country, score, date: Date.now() });
-    leaderboard.sort((a, b) => b.score - a.score);
-    localStorage.setItem('fms_leaderboard', JSON.stringify(leaderboard.slice(0, 50)));
-    alert('Rank Registered!');
-    document.getElementById('ranking-reg-section').classList.add('hidden');
-  }
-
-  showLeaderboard() {
-    const leaderboard = JSON.parse(localStorage.getItem('fms_leaderboard') || '[]');
-    const body = document.getElementById('leaderboard-body');
-    body.innerHTML = leaderboard.map((entry, i) => `
-      <tr>
-        <td>#${i + 1}</td>
-        <td>${this.getFlag(entry.country)} ${entry.name}</td>
-        <td style="color: #ffd700; font-weight: bold;">${entry.score.toLocaleString()}</td>
-      </tr>
-    `).join('');
-    this.leaderboardModal.classList.remove('hidden');
-  }
-
-  getFlag(code) {
-    const flags = { KR: '🇰🇷', US: '🇺🇸', JP: '🇯🇵', CN: '🇨🇳', TW: '🇹🇼', FR: '🇫🇷', DE: '🇩🇪', BR: '🇧🇷', Global: '🌐' };
-    return flags[code] || '🌐';
-  }
-
-  loadLeaderboard() {} 
 
   initSetupModal() {
     document.querySelectorAll('.brand-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         this.userInfo.brand = btn.dataset.brand;
-        const models = this.mouseData[this.userInfo.brand].sort();
+        const models = mouseDatabase[this.userInfo.brand].sort();
         this.modelSelect.innerHTML = models.map(m => `<option value="${m}">${m}</option>`).join('') + '<option value="Other">Other</option>';
         document.querySelector('.modal-step[data-step="1"]').classList.add('hidden');
         document.querySelector('.modal-step[data-step="2"]').classList.remove('hidden');
@@ -361,40 +303,37 @@ class SensGame {
     document.querySelector('.modal-step[data-step="1"]').classList.remove('hidden');
   }
 
-  resetGame() {
+  submitRank() {
+    const entry = {
+      name: document.getElementById('rank-name').value || 'Anonymous',
+      country: document.getElementById('rank-country').value,
+      score: parseInt(document.getElementById('final-score-value').textContent)
+    };
+    this.rankingRepo.saveRanking(entry);
+    alert('Rank Registered!');
+    document.getElementById('ranking-reg-section').classList.add('hidden');
+  }
+
+  showLeaderboard() {
+    const leaderboard = this.rankingRepo.getTopRankings();
+    const body = document.getElementById('leaderboard-body');
+    const flags = { KR: '🇰🇷', US: '🇺🇸', JP: '🇯🇵', CN: '🇨🇳', TW: '🇹🇼', FR: '🇫🇷', DE: '🇩🇪', BR: '🇧🇷', Global: '🌐' };
+    body.innerHTML = leaderboard.map((entry, i) => `
+      <tr>
+        <td>#${i + 1}</td>
+        <td>${flags[entry.country] || '🌐'} ${entry.name}</td>
+        <td class="rank-score">${entry.score.toLocaleString()}</td>
+      </tr>
+    `).join('');
+    this.leaderboardModal.classList.remove('hidden');
+  }
+
+  resetUI() {
     this.resultOverlay.classList.add('hidden');
     this.startOverlay.classList.remove('hidden');
-    this.resetStats();
+    this.hitsDisplay.textContent = '0';
+    this.missesDisplay.textContent = '0';
+    this.timerDisplay.textContent = '00:00';
+    this.cells.forEach(c => c.classList.remove('active'));
   }
-
-  initConverter() {
-    this.gameSelect = document.getElementById('game-select');
-    this.sensInput = document.getElementById('current-sens');
-    this.resultsDiv = document.getElementById('converted-results');
-    const update = () => {
-      const s = parseFloat(this.sensInput.value);
-      if (!s) return;
-      const base = s / this.multipliers[this.gameSelect.value];
-      this.resultsDiv.innerHTML = `<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">` + 
-        Object.entries(this.multipliers).map(([k, v]) => `
-          <div style="background: rgba(255,255,255,0.05); padding: 5px; border-radius: 4px; font-size: 10px;">
-            ${this.gameNames[k]}<br><b style="color: #fff; font-size: 12px;">${(base * v).toFixed(3)}</b>
-          </div>
-        `).join('') + `</div>`;
-    };
-    this.gameSelect.addEventListener('change', update);
-    this.sensInput.addEventListener('input', update);
-    this.updateConversion = update;
-  }
-
-  syncConverter() {
-    const map = { 'Valorant': 'valorant', 'CS2': 'cs2', 'Apex': 'apex', 'Overwatch 2': 'ow2' };
-    if (map[this.userInfo.game]) this.gameSelect.value = map[this.userInfo.game];
-    this.sensInput.value = this.userInfo.sens;
-    if (this.updateConversion) this.updateConversion();
-  }
-
-  recordGraphSnapshot() {} 
 }
-
-document.addEventListener('DOMContentLoaded', () => new SensGame());

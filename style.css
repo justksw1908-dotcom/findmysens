@@ -181,12 +181,35 @@ button:hover {
   z-index: 100;
   padding: 32px;
   gap: 24px;
+  text-align: center;
 }
 
 .overlay-result {
   overflow-y: auto;
   justify-content: flex-start !important; /* Allow scroll from top */
   padding: 40px !important;
+}
+
+/* Toggle Switch Styling */
+.toggle-container {
+  margin: 16px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+#life-mode-toggle {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: var(--accent-cyan);
+}
+
+.toggle-text {
+  font-family: var(--font-header);
+  color: var(--text-primary);
+  font-size: 0.9rem;
 }
 
 /* Modal Specifics */
@@ -229,11 +252,6 @@ button:hover {
   padding: 20px 12px;
 }
 
-.brand-btn img {
-  height: 32px;
-  filter: grayscale(1) brightness(2);
-}
-
 /* Game Area */
 .game-view {
   flex: 1;
@@ -247,7 +265,7 @@ button:hover {
 
 .grid-container {
   width: 100%;
-  max-width: 1200px; /* Increased for better visibility */
+  max-width: 1200px; 
   aspect-ratio: 16 / 9;
   background-color: #000;
   border: 2px solid var(--border-color);
@@ -263,12 +281,27 @@ button:hover {
   background-color: rgba(255, 255, 255, 0.02);
   transition: background-color 0.1s ease-in; 
   aspect-ratio: 1 / 1; 
+  position: relative;
 }
 
 .grid-cell.active {
   background-color: var(--accent-cyan);
   box-shadow: inset 0 0 15px rgba(0, 242, 255, 0.8), var(--glow-cyan);
   z-index: 10;
+}
+
+/* Restoration of the center dot */
+.grid-cell.active::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background-color: var(--accent-orange);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--accent-orange);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 /* Result Layout */
@@ -298,7 +331,7 @@ button:hover {
 
 .chart-wrapper {
   position: relative;
-  height: 240px; /* Increased height */
+  height: 240px; 
   width: 100%;
   background: rgba(0, 0, 0, 0.2);
   border-radius: 8px;
@@ -344,19 +377,6 @@ button:hover {
 
 .hidden {
   display: none !important;
-}
-
-#converter-section {
-  width: 100%;
-  margin-top: 24px;
-  padding: 24px;
-}
-
-.converter-controls {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
 }
 
 .converter-result-card {

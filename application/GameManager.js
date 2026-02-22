@@ -5,17 +5,23 @@ export class GameManager {
     this.hits = 0;
     this.misses = 0;
     this.startTime = null;
+    this.initialInterval = 1000;
     this.currentInterval = 1000;
     this.minInterval = 300;
     this.intervalDecrease = 10;
+    this.intervalPenalty = 50; // Slow down penalty
     
     this.activeCellIndex = null;
     this.prevCellIndex = null;
     this.timerIntervalId = null;
     this.targetTimeoutId = null;
     
-    this.lastHitTime = 0; // Guard for rapid double clicks
-    this.HIT_COOLDOWN = 150; // ms
+    this.lastHitTime = 0;
+    this.HIT_COOLDOWN = 150;
+    
+    this.consecutiveNoClicks = 0;
+    this.MAX_NO_CLICKS = 10;
+    this.missLoggedThisFlash = false; // Prevent multiple misses per target flash
     
     this.listeners = {};
   }
@@ -32,14 +38,14 @@ export class GameManager {
   }
 
   start(config) {
-    // Defense: Clear any existing intervals/timeouts first
     if (this.timerIntervalId) clearInterval(this.timerIntervalId);
     if (this.targetTimeoutId) clearTimeout(this.targetTimeoutId);
 
     this.isLifeMode = config.isLifeMode;
     this.hits = 0;
     this.misses = 0;
-    this.currentInterval = 1000;
+    this.consecutiveNoClicks = 0;
+    this.currentInterval = this.initialInterval;
     this.isPlaying = true;
     this.startTime = Date.now();
     this.lastHitTime = 0;
@@ -68,10 +74,10 @@ export class GameManager {
   spawnTarget() {
     if (!this.isPlaying) return;
     
+    this.missLoggedThisFlash = false; // Reset for new target
     this.prevCellIndex = this.activeCellIndex;
     this.emit('targetExpired', this.activeCellIndex);
     
-    // Logic for picking new target index should be informed by total cells
     this.emit('targetSpawned', (cellCount) => {
       let newIndex;
       do {
@@ -82,7 +88,9 @@ export class GameManager {
     });
 
     this.targetTimeoutId = setTimeout(() => {
-      this.handleMiss();
+      if (!this.missLoggedThisFlash) {
+        this.handleMiss(); // Handle AFK miss
+      }
       this.spawnTarget();
     }, this.currentInterval);
   }
@@ -91,9 +99,12 @@ export class GameManager {
     if (!this.isPlaying) return;
     
     const now = Date.now();
-    if (now - this.lastHitTime < this.HIT_COOLDOWN) return; // Ignore rapid clicks
+    if (now - this.lastHitTime < this.HIT_COOLDOWN) return;
     
     this.lastHitTime = now;
+    this.consecutiveNoClicks = 0; // Reset AFK counter
+    this.missLoggedThisFlash = true; // Mark as processed
+    
     clearTimeout(this.targetTimeoutId);
     this.hits++;
     this.currentInterval = Math.max(this.minInterval, this.currentInterval - this.intervalDecrease);
@@ -102,10 +113,22 @@ export class GameManager {
   }
 
   handleMiss() {
-    if (!this.isPlaying) return;
-    this.misses++;
-    this.emit('miss', { misses: this.misses });
+    if (!this.isPlaying || this.missLoggedThisFlash) return;
     
+    this.missLoggedThisFlash = true;
+    this.misses++;
+    this.consecutiveNoClicks++;
+    
+    // Slow down penalty
+    this.currentInterval = Math.min(this.initialInterval, this.currentInterval + this.intervalPenalty);
+    
+    this.emit('miss', { misses: this.misses, interval: this.currentInterval });
+    
+    if (this.consecutiveNoClicks >= this.MAX_NO_CLICKS) {
+      this.stop();
+      return;
+    }
+
     if (this.isLifeMode) {
       const life = 5 - this.misses;
       this.emit('lifeUpdated', life);

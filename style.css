@@ -22,7 +22,7 @@
   --glass-effect: blur(10px);
 }
 
-/* --- Global Reset & Form Elements (Design System Rule) --- */
+/* --- Global Reset & Form Elements --- */
 button, input, select, textarea {
   appearance: none;
   -webkit-appearance: none;
@@ -35,7 +35,6 @@ button, input, select, textarea {
   transition: all 0.2s ease;
 }
 
-/* Force dark background for dropdown options to fix visibility */
 select option {
   background-color: #121212;
   color: #ffffff;
@@ -167,6 +166,29 @@ button:hover {
   box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
 }
 
+/* --- Overlays (Start & Result Screens) --- */
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0; /* Ensure absolute fill */
+  background-color: rgba(18, 18, 18, 0.98);
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* Center horizontally */
+  align-items: center;     /* Center vertically */
+  z-index: 100;
+  padding: 32px;
+  gap: 24px;
+}
+
+.overlay-result {
+  overflow-y: auto;
+  justify-content: flex-start !important; /* Allow scroll from top */
+  padding: 40px !important;
+}
+
 /* Modal Specifics */
 .modal-overlay {
   position: fixed;
@@ -225,7 +247,7 @@ button:hover {
 
 .grid-container {
   width: 100%;
-  max-width: 1120px;
+  max-width: 1200px; /* Increased for better visibility */
   aspect-ratio: 16 / 9;
   background-color: #000;
   border: 2px solid var(--border-color);
@@ -234,6 +256,7 @@ button:hover {
   position: relative;
   border-radius: 4px;
   overflow: hidden;
+  margin: 0 auto;
 }
 
 .grid-cell {
@@ -248,19 +271,13 @@ button:hover {
   z-index: 10;
 }
 
-/* Result Overlay */
-.overlay-result {
-  overflow-y: auto;
-  justify-content: flex-start !important;
-  padding: 40px !important;
-}
-
+/* Result Layout */
 .result-layout {
   display: flex;
   width: 100%;
   gap: 32px;
   margin-top: 20px;
-  flex-wrap: wrap; /* Prevent collapsing on small screens */
+  flex-wrap: wrap; 
 }
 
 .result-sidebar {
@@ -281,7 +298,7 @@ button:hover {
 
 .chart-wrapper {
   position: relative;
-  height: 220px; 
+  height: 240px; /* Increased height */
   width: 100%;
   background: rgba(0, 0, 0, 0.2);
   border-radius: 8px;

@@ -62,6 +62,10 @@ AI 및 개발자는 UI/UX를 수정하거나 추가할 때 반드시 이 규범�
     * `background: var(--bg-panel); backdrop-filter: blur(10px);`
 * 테두리는 아주 얇고 은은하게 빛나야 한다.
 
+### Layout & Overlays (레이아웃 및 오버레이)
+* **중앙 정렬:** 모든 오버레이(시작 화면, 결과창)는 부모 컨테이너 내에서 반드시 `display: flex; justify-content: center; align-items: center;`를 통해 정중앙에 위치해야 한다.
+* **유연한 확장성:** 결과창과 같이 정보량이 많은 오버레이는 부모의 크기에 갇히지 않도록 `overflow-y: auto;`를 지원해야 하며, 내부 요소들은 `flex-wrap`을 활용해 가독성을 유지해야 한다.
+
 ### Grid & Spacing (간격)
 * 모든 마진(Margin)과 패딩(Padding)은 4px의 배수를 기본으로 한다 (4, 8, 12, 16, 24px...).
 * 요소 간의 간격이 너무 좁아서 답답해 보이지 않도록 충분한 여백(White Space)을 둔다.

@@ -28,6 +28,87 @@
 </head>
 <body>
     <div class="app-container">
+        <!-- Setup Modal -->
+        <div id="setup-modal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <div class="modal-step" data-step="1">
+                    <h2>STEP 1: BRAND</h2>
+                    <p>Select your mouse brand</p>
+                    <div class="brand-grid">
+                        <button class="brand-btn" data-brand="Logitech">Logitech</button>
+                        <button class="brand-btn" data-brand="Razer">Razer</button>
+                        <button class="brand-btn" data-brand="Zowie">Zowie</button>
+                        <button class="brand-btn" data-brand="SteelSeries">SteelSeries</button>
+                        <button class="brand-btn" data-brand="Pulsar">Pulsar</button>
+                        <button class="brand-btn" data-brand="Finalmouse">Finalmouse</button>
+                        <button class="brand-btn" data-brand="VGN/VXE">VGN/VXE</button>
+                    </div>
+                </div>
+
+                <div class="modal-step hidden" data-step="2">
+                    <h2>STEP 2: MODEL</h2>
+                    <p>Select your mouse model</p>
+                    <div class="form-group">
+                        <select id="mouse-model-select">
+                            <option value="" disabled selected>마우스 모델 선택</option>
+                        </select>
+                    </div>
+                    <div class="modal-nav">
+                        <button class="next-step-btn" data-current-step="2">NEXT</button>
+                    </div>
+                </div>
+
+                <div class="modal-step hidden" data-step="3">
+                    <h2>STEP 3: SETTINGS</h2>
+                    <p>Enter your game settings</p>
+                    <div class="form-group">
+                        <label>MAIN GAME</label>
+                        <select id="setup-game-select">
+                            <option value="Valorant">발로란트</option>
+                            <option value="CS2">CS2</option>
+                            <option value="Apex">에이펙스</option>
+                            <option value="Overwatch 2">오버워치 2</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>IN-GAME SENSITIVITY</label>
+                        <input type="number" id="setup-sens-input" step="0.001" placeholder="e.g. 0.35">
+                    </div>
+                    <div class="form-group">
+                        <label>MOUSE DPI</label>
+                        <input type="number" id="setup-dpi-input" step="1" placeholder="e.g. 800">
+                    </div>
+                    <div class="modal-nav">
+                        <button id="finish-setup-btn" class="glow-btn">COMPLETE</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <aside id="user-info-sidebar" class="user-sidebar hidden">
+            <div class="sidebar-header">
+                <h3>USER INFO</h3>
+            </div>
+            <div class="sidebar-content">
+                <div class="info-group">
+                    <span class="info-label">MOUSE</span>
+                    <span id="side-brand" class="info-value">-</span>
+                    <span id="side-model" class="info-sub-value">-</span>
+                </div>
+                <div class="info-group">
+                    <span class="info-label">DPI</span>
+                    <span id="side-dpi" class="info-value">-</span>
+                </div>
+                <div class="info-group">
+                    <span class="info-label">GAME / SENS</span>
+                    <span id="side-game" class="info-value">-</span>
+                    <span id="side-sens" class="info-sub-value">-</span>
+                </div>
+                <button id="edit-info-btn" class="edit-btn">EDIT INFO</button>
+            </div>
+        </aside>
+
         <header>
             <h1>FIND MY <span class="accent">SENS</span></h1>
             <div class="stats-panel">
@@ -106,12 +187,17 @@
                     </div>
 
                     <div id="converter-section" style="margin-top: 25px; padding: 20px; background: rgba(0, 0, 0, 0.4); border-radius: 8px; text-align: left; width: 100%; box-sizing: border-box;">
-                      <h3 style="color: #fff; margin-top: 0; margin-bottom: 12px; font-size: 16px; font-family: 'Orbitron', sans-serif;">🎮 내 감도 다른 게임으로 변환하기</h3>
+                      <h3 style="color: #fff; margin-top: 0; margin-bottom: 12px; font-size: 16px; font-family: 'Orbitron', sans-serif;">🎮 글로벌 게임 감도 변환기</h3>
                       <div style="display: flex; gap: 10px; margin-bottom: 15px;">
                         <select id="game-select" style="padding: 10px; background: #2a2a35; color: #fff; border: 1px solid #444; border-radius: 4px; outline: none; flex: 1; font-size: 14px;">
                           <option value="valorant">발로란트 (Valorant)</option>
-                          <option value="csgo">CS2 / 에이펙스 레전드</option>
-                          <option value="ow2">오버워치 2</option>
+                          <option value="cs2">카운터 스트라이크 2 (CS2)</option>
+                          <option value="apex">에이펙스 레전드 (Apex)</option>
+                          <option value="ow2">오버워치 2 (OW2)</option>
+                          <option value="cod">콜 오브 듀티 (Warzone)</option>
+                          <option value="r6">레인보우 식스 시즈 (R6)</option>
+                          <option value="destiny2">데스티니 가디언즈 (Destiny 2)</option>
+                          <option value="tf2">팀 포트리스 2 (TF2)</option>
                         </select>
                         <input type="number" id="current-sens" placeholder="현재 사용중인 인게임 감도" step="0.01" style="padding: 10px; background: #2a2a35; color: #fff; border: 1px solid #444; border-radius: 4px; outline: none; flex: 1.5; font-size: 14px;">
                       </div>

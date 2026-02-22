@@ -4,8 +4,27 @@
 
 class SensGame {
   constructor() {
+    this.mouseData = {
+      'Logitech': ['G Pro X Superlight', 'G Pro X Superlight 2', 'G304', 'G502 Hero', 'G703', 'G Pro Wireless'],
+      'Razer': ['DeathAdder V3 Pro', 'Viper V2 Pro', 'Basilisk V3', 'DeathAdder Essential', 'Viper Mini', 'Orochi V2'],
+      'Zowie': ['EC2-C', 'FK2-B', 'ZA13-C', 'S2-C', 'EC1-CW'],
+      'SteelSeries': ['Aerox 3', 'Rival 3', 'Sensei Ten', 'Prime Wireless', 'Aerox 5'],
+      'Pulsar': ['X2 V2', 'X2H', 'Xlite V3', 'X2 Mini', 'Xlite V2'],
+      'Finalmouse': ['UltralightX', 'Starlight-12', 'Air58'],
+      'VGN/VXE': ['Dragonfly F1 Pro', 'VXE R1 Pro']
+    };
+
+    this.userInfo = {
+      brand: '',
+      model: '',
+      dpi: '',
+      game: '',
+      sens: ''
+    };
+
     this.gridContainer = document.getElementById('grid-container');
     this.hitsDisplay = document.getElementById('hits-count');
+    // ... rest of constructor initialization
     this.missesDisplay = document.getElementById('misses-count');
     this.lifeDisplay = document.getElementById('life-left');
     this.timerDisplay = document.getElementById('timer-display');
@@ -27,6 +46,18 @@ class SensGame {
     this.finalHits = document.getElementById('final-hits');
     this.finalTime = document.getElementById('final-time');
     this.finalGrade = document.getElementById('final-grade');
+
+    // Setup Modal Elements
+    this.setupModal = document.getElementById('setup-modal');
+    this.modalSteps = document.querySelectorAll('.modal-step');
+    this.nextBtns = document.querySelectorAll('.next-step-btn');
+    this.brandBtns = document.querySelectorAll('.brand-btn');
+    this.modelSelect = document.getElementById('mouse-model-select');
+    this.finishBtn = document.getElementById('finish-setup-btn');
+    
+    // Sidebar Elements
+    this.sidebar = document.getElementById('user-info-sidebar');
+    this.editBtn = document.getElementById('edit-info-btn');
 
     this.modes = {
       standard: { cols: 16, rows: 9, side: 70 }, 
@@ -64,11 +95,18 @@ class SensGame {
 
     this.init();
     this.initConverter();
+    this.initSetupModal();
   }
 
   init() {
     this.createGrid();
-    this.startBtn.addEventListener('click', () => this.startGame());
+    this.startBtn.addEventListener('click', () => {
+      if (!this.userInfo.brand) {
+        this.openSetupModal();
+      } else {
+        this.startGame();
+      }
+    });
     this.stopBtn.addEventListener('click', () => this.stopGame());
     this.restartBtn.addEventListener('click', () => {
       this.resultOverlay.classList.add('hidden');
@@ -98,6 +136,82 @@ class SensGame {
       const cell = e.target.closest('.grid-cell');
       if (cell) this.handleCellClick(cell, e);
     });
+
+    this.editBtn.addEventListener('click', () => this.openSetupModal());
+  }
+
+  initSetupModal() {
+    // Step 1: Brand Selection
+    this.brandBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const brand = btn.dataset.brand;
+        this.userInfo.brand = brand;
+        this.brandBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this.updateModelDropdown(brand);
+        this.goToStep(2);
+      });
+    });
+
+    // Step 2 & 3 Navigation
+    this.nextBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const currentStep = parseInt(btn.dataset.currentStep);
+        if (currentStep === 2 && !this.modelSelect.value) return;
+        this.goToStep(currentStep + 1);
+      });
+    });
+
+    // Step 3: Finish
+    this.finishBtn.addEventListener('click', () => {
+      this.userInfo.model = this.modelSelect.value;
+      this.userInfo.game = document.getElementById('setup-game-select').value;
+      this.userInfo.sens = document.getElementById('setup-sens-input').value;
+      this.userInfo.dpi = document.getElementById('setup-dpi-input').value;
+
+      if (!this.userInfo.sens || !this.userInfo.dpi) {
+        alert('모든 정보를 입력해주세요.');
+        return;
+      }
+
+      this.updateSidebar();
+      this.closeSetupModal();
+    });
+  }
+
+  goToStep(step) {
+    this.modalSteps.forEach(s => s.classList.add('hidden'));
+    document.querySelector(`.modal-step[data-step="${step}"]`).classList.remove('hidden');
+  }
+
+  updateModelDropdown(brand) {
+    const models = this.mouseData[brand] || [];
+    const sortedModels = [...models].sort();
+    this.modelSelect.innerHTML = '<option value="" disabled selected>마우스 모델 선택</option>';
+    sortedModels.forEach(model => {
+      const option = document.createElement('option');
+      option.value = model;
+      option.textContent = model;
+      this.modelSelect.appendChild(option);
+    });
+  }
+
+  openSetupModal() {
+    this.setupModal.classList.remove('hidden');
+    this.goToStep(1);
+  }
+
+  closeSetupModal() {
+    this.setupModal.classList.add('hidden');
+  }
+
+  updateSidebar() {
+    document.getElementById('side-brand').textContent = this.userInfo.brand;
+    document.getElementById('side-model').textContent = this.userInfo.model;
+    document.getElementById('side-dpi').textContent = `${this.userInfo.dpi} DPI`;
+    document.getElementById('side-game').textContent = this.userInfo.game;
+    document.getElementById('side-sens').textContent = this.userInfo.sens;
+    this.sidebar.classList.remove('hidden');
   }
 
   initConverter() {
@@ -107,6 +221,24 @@ class SensGame {
 
     if (!this.gameSelect || !this.sensInput || !this.resultsDiv) return;
 
+    // CS2 (Source Engine)를 기준(1.0)으로 했을 때의 각 게임별 변환 상수
+    const multipliers = {
+      'cs2': 1,
+      'apex': 1,
+      'tf2': 1,
+      'valorant': 1 / 3.181818,
+      'ow2': 3.333333,
+      'cod': 3.333333,
+      'destiny2': 3.333333,
+      'r6': 3.839 // default multiplier 0.02 기준
+    };
+
+    const gameNames = {
+      'valorant': '발로란트', 'cs2': 'CS2', 'apex': '에이펙스', 
+      'ow2': '오버워치 2', 'cod': '콜옵 워존', 'r6': '레인보우 식스', 
+      'destiny2': '데스티니 2', 'tf2': '팀포 2'
+    };
+
     const updateConversion = () => {
       if (!this.sensInput.value) {
         this.resultsDiv.innerHTML = '';
@@ -114,46 +246,42 @@ class SensGame {
       }
 
       const currentSens = parseFloat(this.sensInput.value);
-      const game = this.gameSelect.value;
+      const selectedGame = this.gameSelect.value;
       
-      // showAnalysis()에서 화면에 출력된 오차 퍼센트를 가져와 숫자로 변환
+      // 분석된 오차값 가져오기 (오버플릭은 감도를 낮추고, 언더플릭은 높임)
       const deviationText = this.deviationDisplay.textContent.replace('%', '').replace('+', '');
       const deviationPercent = parseFloat(deviationText) || 0;
-      
-      // 측정된 오차에 따라 '완벽한 감도' 자동 보정 (오버플릭은 감도를 낮추고, 언더플릭은 높임)
       const adjustmentFactor = 1 - (deviationPercent / 100); 
       const perfectSens = currentSens * adjustmentFactor;
 
-      // 선택한 게임의 엔진 기준값을 CS2(Source Engine) 기준으로 통일
-      let baseSens = perfectSens;
-      if (game === 'valorant') baseSens = perfectSens * 3.181818;
-      else if (game === 'ow2') baseSens = perfectSens / 3.333333;
+      // 1. 현재 입력된 게임의 감도를 공통 기준(CS2)으로 역산
+      const baseCs2Sens = perfectSens / multipliers[selectedGame];
 
-      // 타 게임용 감도로 변환 계산
-      const valoSens = baseSens / 3.181818;
-      const csgoSens = baseSens;
-      const ow2Sens = baseSens * 3.333333;
-
-      // 결과 렌더링
-      this.resultsDiv.innerHTML = `
-        <div style="color: #00f2ff; margin-bottom: 12px; font-weight: bold;">
-          💡 테스트 결과가 반영된 추천 감도: <span style="font-size: 18px;">${perfectSens.toFixed(3)}</span>
+      // 2. 결과를 동적 HTML로 생성
+      let resultsHtml = `
+        <div style="color: #00f2ff; margin-bottom: 15px; font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+          💡 내 에임 오차가 보정된 게임별 추천 감도
         </div>
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; text-align: center; font-size: 12px;">
-          <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);">
-            발로란트<br><strong style="font-size: 15px; color: #fff;">${valoSens.toFixed(3)}</strong>
-          </div>
-          <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);">
-            CS2 / 에이펙스<br><strong style="font-size: 15px; color: #fff;">${csgoSens.toFixed(3)}</strong>
-          </div>
-          <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);">
-            오버워치 2<br><strong style="font-size: 15px; color: #fff;">${ow2Sens.toFixed(3)}</strong>
-          </div>
-        </div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center; font-size: 11px;">
       `;
+
+      for (const [key, multi] of Object.entries(multipliers)) {
+        const convertedSens = baseCs2Sens * multi;
+        // 선택한 게임은 강조 표시
+        const bg = key === selectedGame ? 'rgba(0, 242, 255, 0.2)' : 'rgba(255,255,255,0.05)';
+        const border = key === selectedGame ? '1px solid #00f2ff' : '1px solid rgba(255,255,255,0.1)';
+        
+        resultsHtml += `
+          <div style="background: ${bg}; padding: 8px 4px; border-radius: 6px; border: ${border};">
+            ${gameNames[key]}<br><strong style="font-size: 14px; color: #fff;">${convertedSens.toFixed(3)}</strong>
+          </div>
+        `;
+      }
+
+      resultsHtml += `</div>`;
+      this.resultsDiv.innerHTML = resultsHtml;
     };
 
-    // 이벤트 리스너 등록 (입력하거나 게임을 바꿀 때마다 실시간 계산)
     this.gameSelect.addEventListener('change', updateConversion);
     this.sensInput.addEventListener('input', updateConversion);
   }

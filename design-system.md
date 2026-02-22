@@ -40,6 +40,18 @@ AI 및 개발자는 UI/UX를 수정하거나 추가할 때 반드시 이 규범�
 
 ## 4. UI 컴포넌트 규범 (Component Rules)
 
+### Global Reset & Form Elements (가장 중요)
+웹 브라우저의 기본 스타일(흰색 배경, 투박한 테두리)은 우리의 다크 테마를 망치는 주범이다. 모든 상호작용 요소는 아래 규칙을 강제로 따라야 한다.
+
+1.  **모든 버튼(`button`), 입력창(`input`), 선택창(`select`), 텍스트 영역(`textarea`)은 브라우저 기본 스타일을 제거해야 한다.**
+    * `appearance: none;`, `-webkit-appearance: none;`, `border: none;`, `outline: none;`, `background: transparent;` 를 기본으로 적용한다.
+2.  **기본 배경색과 글자색을 강제한다.**
+    * 기본 배경: `var(--bg-panel)` (절대 흰색이나 회색 금지)
+    * 기본 글자색: `var(--text-primary)`
+    * 테두리: `1px solid var(--border-color)`
+3.  **Select 드롭다운 옵션:**
+    * `<select>` 내부의 `<option>` 태그들도 반드시 어두운 배경(`background: #121212;`)과 흰색 글자를 가져야 한다.
+
 ### Buttons (버튼)
 * 기본적으로 `--accent-cyan`을 활용한 네온 글로우(box-shadow) 효과를 가진다.
 * Hover 시 배경색이 밝아지거나 테두리가 강조되어야 한다.

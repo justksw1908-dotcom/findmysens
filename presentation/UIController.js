@@ -34,7 +34,7 @@ export class UIController {
       },
       ja: {
         hits: "ヒット", misses: "ミス", time: "時間", stop_test: "テスト終了", to_stop: "終了するには",
-        user_info: "ユーザー情報", mouse: "マウス", game_sens: "ゲーム / 감도", edit_info: "情報修正",
+        user_info: "ユーザー情報", mouse: "マウス", game_sens: "게임 / 감도", edit_info: "情報修正",
         life_mode: "ライフモード (5回ミスで終了)", start_test: "テスト開始", hint_text: "ターゲットの中心点に基づいて精度を分析します。",
         view_leaderboard: "TOP 50 ランキングを表示", test_summary: "テスト結果", precision_grade: "精度ランク",
         final_score: "最終スコア", sens_analysis: "感度分析", avg_aim_deviation: "平均エイム偏差",
@@ -42,11 +42,11 @@ export class UIController {
         restart_test: "再試行 (Space)", select_brand: "マウスブランドを選択", select_model: "モデルを選択",
         select_mouse_model: "マウスモデルを選択", next: "次へ", enter_settings: "ゲーム設定を入力",
         main_game: "メインゲーム", ingame_sens: "인게임感度", mouse_dpi: "マウスDPI", complete: "完了",
-        top_50_leaderboard: "TOP 50 リーダーボード", rank: "順位", name: "名前", score: "スコア"
+        top_50_leaderboard: "TOP 50 リー더ボード", rank: "順位", name: "名前", score: "スコア"
       },
       zh: {
         hits: "命中", misses: "失误", time: "时间", stop_test: "停止测试", to_stop: "停止",
-        user_info: "用户信息", mouse: "鼠标", game_sens: "游戏 / 灵敏度", edit_info: "编辑信息",
+        user_info: "用户信息", mouse: "鼠标", game_sens: "游戏 / 灵민도", edit_info: "编辑信息",
         life_mode: "生命模式 (5次失误限制)", start_test: "开始测试", hint_text: "基于目标中心点的精度分析。",
         view_leaderboard: "查看前50名排行榜", test_summary: "测试摘要", precision_grade: "精度等级",
         final_score: "最终得分", sens_analysis: "灵敏度分析", avg_aim_deviation: "平均瞄准偏差",
@@ -60,9 +60,12 @@ export class UIController {
 
     this.userInfo = { brand: '', model: '', dpi: '', game: '', sens: '' };
     this.pixelDistances = [];
-    this.offsets = [];
+    this.graphData = { labels: [], accuracy: [], avgDistance: [] };
     this.currentMode = 'standard';
     this.cells = [];
+    
+    this.accuracyChart = null;
+    this.distanceChart = null;
 
     this.cacheDOM();
     this.bindEvents();
@@ -145,7 +148,7 @@ export class UIController {
   setupGameManagerListeners() {
     this.gameManager.on('gameStarted', (data) => {
       this.pixelDistances = [];
-      this.offsets = [];
+      this.graphData = { labels: [], accuracy: [], avgDistance: [] };
       this.startOverlay.classList.add('hidden');
       this.resultOverlay.classList.add('hidden');
       this.stopBtn.classList.remove('hidden');
@@ -153,6 +156,8 @@ export class UIController {
       this.lifeDisplay.textContent = data.isLifeMode ? '5' : '∞';
       this.hitsDisplay.textContent = '0';
       this.missesDisplay.textContent = '0';
+      
+      this.snapshotInterval = setInterval(() => this.recordGraphSnapshot(), 2000);
     });
 
     this.gameManager.on('timerUpdated', (timeStr) => {
@@ -182,10 +187,25 @@ export class UIController {
     });
 
     this.gameManager.on('gameEnded', (data) => {
+      clearInterval(this.snapshotInterval);
       this.stopBtn.classList.add('hidden');
       this.resultOverlay.classList.remove('hidden');
       this.renderResults(data);
+      this.renderGraphs();
     });
+  }
+
+  recordGraphSnapshot() {
+    if (!this.gameManager.isPlaying) return;
+    const elapsed = this.gameManager.getElapsedString();
+    const total = this.gameManager.hits + this.gameManager.misses;
+    const accuracy = total === 0 ? 0 : (this.gameManager.hits / total) * 100;
+    const recentDists = this.pixelDistances.slice(-5);
+    const avgDist = recentDists.length === 0 ? 0 : recentDists.reduce((a, b) => a + b, 0) / recentDists.length;
+
+    this.graphData.labels.push(elapsed);
+    this.graphData.accuracy.push(accuracy);
+    this.graphData.avgDistance.push(avgDist);
   }
 
   createGrid() {
@@ -237,6 +257,54 @@ export class UIController {
     }
 
     this.syncConverter();
+  }
+
+  renderGraphs() {
+    const ctxAcc = document.getElementById('accuracy-chart').getContext('2d');
+    const ctxDist = document.getElementById('distance-chart').getContext('2d');
+
+    if (this.accuracyChart) this.accuracyChart.destroy();
+    if (this.distanceChart) this.distanceChart.destroy();
+
+    const commonOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#94a3b8' } },
+        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } }
+      }
+    };
+
+    this.accuracyChart = new Chart(ctxAcc, {
+      type: 'line',
+      data: {
+        labels: this.graphData.labels,
+        datasets: [{
+          data: this.graphData.accuracy,
+          borderColor: '#00f2ff',
+          backgroundColor: 'rgba(0, 242, 255, 0.1)',
+          fill: true,
+          tension: 0.4
+        }]
+      },
+      options: { ...commonOptions, scales: { ...commonOptions.scales, y: { ...commonOptions.scales.y, min: 0, max: 100 } } }
+    });
+
+    this.distanceChart = new Chart(ctxDist, {
+      type: 'line',
+      data: {
+        labels: this.graphData.labels,
+        datasets: [{
+          data: this.graphData.avgDistance,
+          borderColor: '#ff4d00',
+          backgroundColor: 'rgba(255, 77, 0, 0.1)',
+          fill: true,
+          tension: 0.4
+        }]
+      },
+      options: commonOptions
+    });
   }
 
   syncConverter() {

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,7 +10,6 @@
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-
       gtag('config', 'G-0WL5YHKLTK');
     </script>
     <script type="text/javascript">
@@ -28,211 +27,274 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- Setup Modal -->
-        <div id="setup-modal" class="modal-overlay hidden">
-            <div class="modal-content">
-                <div class="modal-step" data-step="1">
-                    <h2>STEP 1: BRAND</h2>
-                    <p>Select your mouse brand</p>
-                    <div class="brand-grid">
-                        <button class="brand-btn" data-brand="Logitech">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Logitech_logo.svg/512px-Logitech_logo.svg.png" alt="Logitech">
-                            <span>Logitech</span>
-                        </button>
-                        <button class="brand-btn" data-brand="Razer">
-                            <img src="https://upload.wikimedia.org/wikipedia/en/thumb/4/40/Razer_Snake_Logo.svg/512px-Razer_Snake_Logo.svg.png" alt="Razer">
-                            <span>Razer</span>
-                        </button>
-                        <button class="brand-btn" data-brand="Zowie">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/ZOWIE_GEAR_logo.svg/512px-ZOWIE_GEAR_logo.svg.png" alt="Zowie">
-                            <span>Zowie</span>
-                        </button>
-                        <button class="brand-btn" data-brand="SteelSeries">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/SteelSeries_Logo.svg/512px-SteelSeries_Logo.svg.png" alt="SteelSeries">
-                            <span>SteelSeries</span>
-                        </button>
-                        <button class="brand-btn" data-brand="Pulsar">
-                            <img src="https://cdn.shopify.com/s/files/1/0533/1779/5995/files/Pulsar_Logo_White_300x.png" alt="Pulsar">
-                            <span>Pulsar</span>
-                        </button>
-                        <button class="brand-btn" data-brand="Vaxee">
-                            <img src="https://www.vaxee.co/uploads/vaxee/images/logo.png" alt="Vaxee">
-                            <span>Vaxee</span>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="modal-step hidden" data-step="2">
-                    <h2>STEP 2: MODEL</h2>
-                    <p>Select your mouse model</p>
-                    <div class="form-group">
-                        <select id="mouse-model-select">
-                            <option value="" disabled selected>마우스 모델 선택</option>
-                        </select>
-                    </div>
-                    <div class="modal-nav">
-                        <button class="next-step-btn" data-current-step="2">NEXT</button>
-                    </div>
-                </div>
-
-                <div class="modal-step hidden" data-step="3">
-                    <h2>STEP 3: SETTINGS</h2>
-                    <p>Enter your game settings</p>
-                    <div class="form-group">
-                        <label>MAIN GAME</label>
-                        <select id="setup-game-select">
-                            <option value="Valorant">발로란트</option>
-                            <option value="CS2">CS2</option>
-                            <option value="Apex">에이펙스</option>
-                            <option value="Overwatch 2">오버워치 2</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>IN-GAME SENSITIVITY</label>
-                        <input type="number" id="setup-sens-input" step="0.001" placeholder="e.g. 0.35">
-                    </div>
-                    <div class="form-group">
-                        <label>MOUSE DPI</label>
-                        <input type="number" id="setup-dpi-input" step="1" placeholder="e.g. 800">
-                    </div>
-                    <div class="modal-nav">
-                        <button id="finish-setup-btn" class="glow-btn">COMPLETE</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Sidebar -->
-        <aside id="user-info-sidebar" class="user-sidebar hidden">
-            <div class="sidebar-header">
-                <h3>USER INFO</h3>
-            </div>
-            <div class="sidebar-content">
-                <div class="info-group">
-                    <span class="info-label">MOUSE</span>
-                    <span id="side-brand" class="info-value">-</span>
-                    <span id="side-model" class="info-sub-value">-</span>
-                </div>
-                <div class="info-group">
-                    <span class="info-label">DPI</span>
-                    <span id="side-dpi" class="info-value">-</span>
-                </div>
-                <div class="info-group">
-                    <span class="info-label">GAME / SENS</span>
-                    <span id="side-game" class="info-value">-</span>
-                    <span id="side-sens" class="info-sub-value">-</span>
-                </div>
-                <button id="edit-info-btn" class="edit-btn">EDIT INFO</button>
-            </div>
-        </aside>
-
         <header>
-            <h1>FIND MY <span class="accent">SENS</span></h1>
+            <div class="logo-area">
+                <h1>FIND MY <span class="accent">SENS</span></h1>
+            </div>
             <div class="stats-panel">
                 <div class="stat-item">
-                    <span class="label">HITS</span>
+                    <span class="label" data-i18n="hits">HITS</span>
                     <span id="hits-count" class="value">0</span>
                 </div>
                 <div class="stat-item danger">
-                    <span class="label">MISSES (LIFE: <span id="life-left">5</span>)</span>
+                    <span class="label"><span data-i18n="misses">MISSES</span> (LIFE: <span id="life-left">5</span>)</span>
                     <span id="misses-count" class="value">0</span>
                 </div>
                 <div class="stat-item">
-                    <span class="label">TIME</span>
+                    <span class="label" data-i18n="time">TIME</span>
                     <span id="timer-display" class="value">00:00</span>
                 </div>
                 <div class="stop-wrapper">
-                    <button id="stop-btn" class="stop-btn hidden">STOP TEST</button>
+                    <button id="stop-btn" class="stop-btn hidden" data-i18n="stop_test">STOP TEST</button>
                     <div class="key-hint-container hidden">
                         <span class="key-cap">SPACE</span>
-                        <span class="key-text">TO STOP</span>
+                        <span class="key-text" data-i18n="to_stop">TO STOP</span>
                     </div>
                 </div>
+            </div>
+            <div class="header-controls">
+                <select id="lang-select">
+                    <option value="en">English</option>
+                    <option value="ko">한국어</option>
+                    <option value="ja">日本語</option>
+                    <option value="zh">简体中文</option>
+                </select>
             </div>
         </header>
 
-        <main class="game-view">
-            <div id="grid-container" class="grid-container">
-                <div id="overlay-start" class="overlay">
-                    <div class="mode-selection">
-                        <button class="mode-btn active" data-mode="standard">STANDARD (16x9)</button>
-                        <button class="mode-btn" data-mode="small">SMALL (32x18)</button>
-                    </div>
-                    
-                    <div class="toggle-container">
-                        <label class="toggle-label">
-                            <input type="checkbox" id="life-mode-toggle" checked>
-                            <span class="toggle-text">LIFE MODE (5 MISSES LIMIT)</span>
-                        </label>
-                    </div>
-
-                    <button id="start-btn" class="glow-btn">START TEST</button>
-                    <p class="hint">Precision analysis based on target center dot.</p>
+        <div class="main-layout">
+            <!-- Sidebar -->
+            <aside id="user-info-sidebar" class="user-sidebar hidden">
+                <div class="sidebar-header">
+                    <h3 data-i18n="user_info">USER INFO</h3>
                 </div>
+                <div class="sidebar-content">
+                    <div class="info-group">
+                        <span class="info-label" data-i18n="mouse">MOUSE</span>
+                        <span id="side-brand" class="info-value">-</span>
+                        <span id="side-model" class="info-sub-value">-</span>
+                    </div>
+                    <div class="info-group">
+                        <span class="info-label">DPI</span>
+                        <span id="side-dpi" class="info-value">-</span>
+                    </div>
+                    <div class="info-group">
+                        <span class="info-label" data-i18n="game_sens">GAME / SENS</span>
+                        <span id="side-game" class="info-value">-</span>
+                        <span id="side-sens" class="info-sub-value">-</span>
+                    </div>
+                    <button id="edit-info-btn" class="edit-btn" data-i18n="edit_info">EDIT INFO</button>
+                </div>
+            </aside>
 
-                <div id="overlay-result" class="overlay hidden">
-                    <h2 class="result-title">TEST SUMMARY</h2>
-                    
-                    <div class="result-layout">
-                        <div class="result-sidebar">
-                            <div class="grade-container">
-                                <span class="grade-label">PRECISION GRADE</span>
-                                <span id="final-grade" class="grade-value">-</span>
-                            </div>
-                            <div class="result-stats">
-                                <div class="res-item">HITS: <span id="final-hits">0</span></div>
-                                <div class="res-item">TIME: <span id="final-time">00:00</span></div>
-                            </div>
-                            <div id="analysis-box" class="analysis-box">
-                                <h3 class="analysis-title">SENSITIVITY ANALYSIS</h3>
-                                <div class="deviation-container">
-                                    <span class="deviation-label">AVG AIM DEVIATION</span>
-                                    <span id="avg-deviation-value" class="deviation-value">0%</span>
+            <main class="game-view">
+                <div id="grid-container" class="grid-container">
+                    <div id="overlay-start" class="overlay">
+                        <div class="mode-selection">
+                            <button class="mode-btn active" data-mode="standard">STANDARD (16x9)</button>
+                            <button class="mode-btn" data-mode="small">SMALL (32x18)</button>
+                        </div>
+                        
+                        <div class="toggle-container">
+                            <label class="toggle-label">
+                                <input type="checkbox" id="life-mode-toggle">
+                                <span class="toggle-text" data-i18n="life_mode">LIFE MODE (5 MISSES LIMIT)</span>
+                            </label>
+                        </div>
+
+                        <button id="start-btn" class="glow-btn" data-i18n="start_test">START TEST</button>
+                        <p class="hint" data-i18n="hint_text">Precision analysis based on target center dot.</p>
+                        
+                        <button id="view-leaderboard-btn" class="leaderboard-trigger">
+                            🏆 <span data-i18n="view_leaderboard">View Top 50 Leaderboard</span>
+                        </button>
+                    </div>
+
+                    <div id="overlay-result" class="overlay hidden">
+                        <h2 class="result-title" data-i18n="test_summary">TEST SUMMARY</h2>
+                        
+                        <div class="result-layout">
+                            <div class="result-sidebar">
+                                <div class="grade-container">
+                                    <span class="grade-label" data-i18n="precision_grade">PRECISION GRADE</span>
+                                    <span id="final-grade" class="grade-value">-</span>
                                 </div>
-                                <p id="analysis-text">Analyzing...</p>
-                                <div id="sens-recommendation" class="recommendation"></div>
+                                <div class="result-stats">
+                                    <div class="res-item"><span data-i18n="hits">HITS</span>: <span id="final-hits">0</span></div>
+                                    <div class="res-item"><span data-i18n="time">TIME</span>: <span id="final-time">00:00</span></div>
+                                </div>
+                                <div id="life-mode-score-box" class="score-box hidden">
+                                    <span class="score-label" data-i18n="final_score">FINAL SCORE</span>
+                                    <span id="final-score-value" class="score-value">0</span>
+                                </div>
+                                <div id="analysis-box" class="analysis-box">
+                                    <h3 class="analysis-title" data-i18n="sens_analysis">SENSITIVITY ANALYSIS</h3>
+                                    <div class="deviation-container">
+                                        <span class="deviation-label" data-i18n="avg_aim_deviation">AVG AIM DEVIATION</span>
+                                        <span id="avg-deviation-value" class="deviation-value">0%</span>
+                                    </div>
+                                    <p id="analysis-text">Analyzing...</p>
+                                    <div id="sens-recommendation" class="recommendation"></div>
+                                </div>
+                            </div>
+                            <div class="result-graph-container">
+                                <div class="chart-wrapper">
+                                    <canvas id="accuracy-chart"></canvas>
+                                </div>
+                                <div class="chart-wrapper">
+                                    <canvas id="distance-chart"></canvas>
+                                </div>
                             </div>
                         </div>
-                        <div class="result-graph-container">
-                            <div class="chart-wrapper">
-                                <canvas id="accuracy-chart"></canvas>
-                            </div>
-                            <div class="chart-wrapper">
-                                <canvas id="distance-chart"></canvas>
-                            </div>
-                        </div>
-                    </div>
 
-                    <div id="converter-section" style="margin-top: 25px; padding: 20px; background: rgba(0, 0, 0, 0.4); border-radius: 8px; text-align: left; width: 100%; box-sizing: border-box;">
-                      <h3 style="color: #fff; margin-top: 0; margin-bottom: 12px; font-size: 16px; font-family: 'Orbitron', sans-serif;">🎮 글로벌 게임 감도 변환기</h3>
-                      <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                        <select id="game-select" style="padding: 10px; background: #2a2a35; color: #fff; border: 1px solid #444; border-radius: 4px; outline: none; flex: 1; font-size: 14px;">
-                          <option value="valorant">발로란트 (Valorant)</option>
-                          <option value="cs2">카운터 스트라이크 2 (CS2)</option>
-                          <option value="apex">에이펙스 레전드 (Apex)</option>
-                          <option value="ow2">오버워치 2 (OW2)</option>
-                          <option value="cod">콜 오브 듀티 (Warzone)</option>
-                          <option value="r6">레인보우 식스 시즈 (R6)</option>
-                          <option value="destiny2">데스티니 가디언즈 (Destiny 2)</option>
-                          <option value="tf2">팀 포트리스 2 (TF2)</option>
-                        </select>
-                        <input type="number" id="current-sens" placeholder="현재 사용중인 인게임 감도" step="0.01" style="padding: 10px; background: #2a2a35; color: #fff; border: 1px solid #444; border-radius: 4px; outline: none; flex: 1.5; font-size: 14px;">
-                      </div>
-                      <div id="converted-results" style="font-size: 14px; color: #ccc;">
+                        <!-- Ranking Registration (Only for Life Mode) -->
+                        <div id="ranking-reg-section" class="ranking-registration hidden">
+                            <h3 data-i18n="register_ranking">Register Your Score</h3>
+                            <div class="reg-form">
+                                <input type="text" id="rank-name" placeholder="Name" maxlength="15">
+                                <select id="rank-country">
+                                    <option value="Global">Global</option>
+                                    <option value="KR">South Korea</option>
+                                    <option value="US">United States</option>
+                                    <option value="JP">Japan</option>
+                                    <option value="CN">China</option>
+                                    <option value="TW">Taiwan</option>
+                                    <option value="FR">France</option>
+                                    <option value="DE">Germany</option>
+                                    <option value="BR">Brazil</option>
+                                </select>
+                                <button id="submit-rank-btn" class="glow-btn small" data-i18n="submit">SUBMIT</button>
+                            </div>
                         </div>
+
+                        <div id="converter-section" style="margin-top: 25px; padding: 20px; background: rgba(0, 0, 0, 0.4); border-radius: 8px; text-align: left; width: 100%; box-sizing: border-box;">
+                          <h3 style="color: #fff; margin-top: 0; margin-bottom: 12px; font-size: 16px; font-family: 'Orbitron', sans-serif;" data-i18n="global_converter">🎮 글로벌 게임 감도 변환기</h3>
+                          <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                            <select id="game-select" style="padding: 10px; background: #2a2a35; color: #fff; border: 1px solid #444; border-radius: 4px; outline: none; flex: 1; font-size: 14px;">
+                              <option value="valorant">발로란트 (Valorant)</option>
+                              <option value="cs2">CS2</option>
+                              <option value="apex">Apex Legends</option>
+                              <option value="ow2">Overwatch 2</option>
+                              <option value="cod">Call of Duty</option>
+                              <option value="r6">Rainbow Six</option>
+                              <option value="destiny2">Destiny 2</option>
+                              <option value="tf2">Team Fortress 2</option>
+                            </select>
+                            <input type="number" id="current-sens" placeholder="In-game Sens" step="0.01" style="padding: 10px; background: #2a2a35; color: #fff; border: 1px solid #444; border-radius: 4px; outline: none; flex: 1.5; font-size: 14px;">
+                          </div>
+                          <div id="converted-results" style="font-size: 14px; color: #ccc;">
+                            </div>
+                        </div>
+                        <button id="restart-btn" data-i18n="restart_test">RESTART TEST (Space)</button>
                     </div>
-                    <button id="restart-btn" class="glow-btn">RETRY TEST</button>
                 </div>
-            </div>
-        </main>
+            </main>
+        </div>
 
         <footer>
             <div class="controls">
-                <p>Mode: <span id="grid-size-text">Standard</span></p>
-                <p>Speed: <span id="interval-text">1.0s</span></p>
+                <p><span data-i18n="mode">Mode</span>: <span id="grid-size-text">Standard</span></p>
+                <p><span data-i18n="speed">Speed</span>: <span id="interval-text">1.0s</span></p>
             </div>
         </footer>
     </div>
+
+    <!-- Setup Modal -->
+    <div id="setup-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-step" data-step="1">
+                <h2>STEP 1: BRAND</h2>
+                <p data-i18n="select_brand">Select your mouse brand</p>
+                <div class="brand-grid">
+                    <button class="brand-btn" data-brand="Logitech">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Logitech_logo.svg/512px-Logitech_logo.svg.png" alt="Logitech">
+                        <span>Logitech</span>
+                    </button>
+                    <button class="brand-btn" data-brand="Razer">
+                        <img src="https://upload.wikimedia.org/wikipedia/en/thumb/4/40/Razer_Snake_Logo.svg/512px-Razer_Snake_Logo.svg.png" alt="Razer">
+                        <span>Razer</span>
+                    </button>
+                    <button class="brand-btn" data-brand="Zowie">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/ZOWIE_GEAR_logo.svg/512px-ZOWIE_GEAR_logo.svg.png" alt="Zowie">
+                        <span>Zowie</span>
+                    </button>
+                    <button class="brand-btn" data-brand="SteelSeries">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/SteelSeries_Logo.svg/512px-SteelSeries_Logo.svg.png" alt="SteelSeries">
+                        <span>SteelSeries</span>
+                    </button>
+                    <button class="brand-btn" data-brand="Pulsar">
+                        <img src="https://cdn.shopify.com/s/files/1/0533/1779/5995/files/Pulsar_Logo_White_300x.png" alt="Pulsar">
+                        <span>Pulsar</span>
+                    </button>
+                    <button class="brand-btn" data-brand="Vaxee">
+                        <img src="https://www.vaxee.co/uploads/vaxee/images/logo.png" alt="Vaxee">
+                        <span>Vaxee</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="modal-step hidden" data-step="2">
+                <h2>STEP 2: MODEL</h2>
+                <p data-i18n="select_model">Select your mouse model</p>
+                <div class="form-group">
+                    <select id="mouse-model-select">
+                        <option value="" disabled selected data-i18n="select_mouse_model">마우스 모델 선택</option>
+                    </select>
+                </div>
+                <div class="modal-nav">
+                    <button class="next-step-btn" data-current-step="2" data-i18n="next">NEXT</button>
+                </div>
+            </div>
+
+            <div class="modal-step hidden" data-step="3">
+                <h2>STEP 3: SETTINGS</h2>
+                <p data-i18n="enter_settings">Enter your game settings</p>
+                <div class="form-group">
+                    <label data-i18n="main_game">MAIN GAME</label>
+                    <select id="setup-game-select">
+                        <option value="Valorant">Valorant</option>
+                        <option value="CS2">CS2</option>
+                        <option value="Apex">Apex</option>
+                        <option value="Overwatch 2">Overwatch 2</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="ingame_sens">IN-GAME SENSITIVITY</label>
+                    <input type="number" id="setup-sens-input" step="0.001" placeholder="e.g. 0.35">
+                </div>
+                <div class="form-group">
+                    <label data-i18n="mouse_dpi">MOUSE DPI</label>
+                    <input type="number" id="setup-dpi-input" step="1" placeholder="e.g. 800">
+                </div>
+                <div class="modal-nav">
+                    <button id="finish-setup-btn" class="glow-btn" data-i18n="complete">COMPLETE</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaderboard Modal -->
+    <div id="leaderboard-modal" class="modal-overlay hidden">
+        <div class="modal-content leaderboard-content">
+            <h2 data-i18n="top_50_leaderboard">TOP 50 LEADERBOARD</h2>
+            <div class="leaderboard-list-container">
+                <table class="leaderboard-table">
+                    <thead>
+                        <tr>
+                            <th data-i18n="rank">Rank</th>
+                            <th data-i18n="name">Name</th>
+                            <th data-i18n="score">Score</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-body">
+                        <!-- Entries will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+            <button class="close-modal-btn" onclick="document.getElementById('leaderboard-modal').classList.add('hidden')">CLOSE</button>
+        </div>
+    </div>
+
     <script type="module" src="main.js"></script>
 </body>
 </html>
